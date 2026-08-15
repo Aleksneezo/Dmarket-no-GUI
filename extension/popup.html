@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DMarket Tracker</title>
+    <style>
+        :root {
+            --bg-main: #0b0f17;
+            --bg-surface: #111722;
+            --bg-hover: #161e2e;
+            --border-color: #242e42;
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --accent-blue: #3b82f6;
+            --green-text: #34d399;
+            --amber-text: #fbbf24;
+            --red-text: #fb7185;
+            --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace, Consolas;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: var(--font-ui);
+        }
+
+        body {
+            width: 320px;
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            padding: 14px;
+            font-size: 13px;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 12px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .brand-badge {
+            background-color: var(--accent-blue);
+            color: #fff;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .brand-title {
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .card {
+            background-color: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+
+        .status-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 12px;
+        }
+
+        .dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--red-text);
+            margin-right: 6px;
+        }
+
+        .dot.active {
+            background-color: var(--green-text);
+            box-shadow: 0 0 6px rgba(52, 211, 153, 0.6);
+        }
+
+        .btn-primary {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            background-color: var(--accent-blue);
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 10px 14px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            transition: background 0.2s;
+            margin-bottom: 8px;
+        }
+
+        .btn-primary:hover {
+            background-color: #2563eb;
+        }
+
+        .btn-secondary {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            width: 100%;
+            background-color: var(--bg-hover);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            transition: border-color 0.2s, background 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background-color: #1c263b;
+            border-color: var(--accent-blue);
+        }
+
+        .font-mono {
+            font-family: var(--font-mono);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="brand">
+            <span class="brand-badge">DM</span>
+            <span class="brand-title">Float & Profit Tracker</span>
+        </div>
+        <span style="font-size: 10px; color: var(--text-secondary);">v2.0 Native</span>
+    </div>
+
+    <div class="card">
+        <div class="status-row">
+            <span>Сессия DMarket:</span>
+            <span id="sessionStatus">
+                <span class="dot" id="statusDot"></span>
+                <strong id="statusText">Проверка...</strong>
+            </span>
+        </div>
+        <div class="status-row" style="margin-top: 6px;">
+            <span>Пользователь:</span>
+            <strong class="font-mono text-green" id="userText">—</strong>
+        </div>
+    </div>
+
+    <button id="openDashboardBtn" class="btn btn-primary">
+        Открыть Dashboard Трекера
+    </button>
+
+    <button id="openDmarketBtn" class="btn btn-secondary">
+        Открыть DMarket.com
+    </button>
+
+    <script src="popup.js"></script>
+</body>
+</html>

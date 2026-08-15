@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DMarket Float Tracker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="flat-theme">
+
+    <div class="app-container">
+        <!-- Top App Bar -->
+        <header class="navbar">
+            <div class="navbar-brand">
+                <div class="brand-badge">DM</div>
+                <div class="brand-text">
+                    <span class="brand-name">DMarket Float Tracker</span>
+                    <span class="brand-tag">Browser Native (No API Keys)</span>
+                </div>
+            </div>
+
+            <div class="navbar-actions">
+                <!-- Browser Session Status Badge -->
+                <div class="api-badge" id="sessionStatusBadge" title="Статус сессии браузера DMarket">
+                    <span class="dot active" id="sessionDot"></span>
+                    <span id="sessionStatusText">Проверка браузера...</span>
+                </div>
+
+                <!-- 1-Click Auto Detect from PC Browsers -->
+                <button id="autoDetectBtn" class="btn-flat btn-secondary" title="Автоматически найти куки DMarket в Chrome, Edge, Brave или Opera">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>
+                    <span>Авто-сессия</span>
+                </button>
+
+                <!-- Settings / Extension Modal Button -->
+                <button id="settingsBtn" class="btn-flat btn-secondary" title="Настройки подключения и браузерного расширения">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                    <span>Настройки</span>
+                </button>
+
+                <!-- Scan Button -->
+                <button id="scanBtn" class="btn-flat btn-accent">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+                    <span id="scanBtnText">Сканировать лоты</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Stats Bar (Flat Metrics) -->
+        <section class="metrics-bar">
+            <div class="metric-card">
+                <span class="metric-label">Всего лотов</span>
+                <span class="metric-value" id="statTotalItems">0</span>
+            </div>
+            <div class="metric-card border-green">
+                <span class="metric-label">#1 Позиция (Мин. цена)</span>
+                <span class="metric-value text-green" id="statRank1Items">0</span>
+            </div>
+            <div class="metric-card border-amber">
+                <span class="metric-label">#2 - #3 Позиция</span>
+                <span class="metric-value text-amber" id="statTop3Items">0</span>
+            </div>
+            <div class="metric-card border-slate">
+                <span class="metric-label">#4+ Позиция</span>
+                <span class="metric-value text-slate" id="statRank4Items">0</span>
+            </div>
+            <div class="metric-card metric-portfolio">
+                <span class="metric-label">Сумма лотов</span>
+                <span class="metric-value font-mono" id="statPortfolioVal">$0.00</span>
+            </div>
+            <div class="metric-card metric-profit">
+                <span class="metric-label">Ожидаемый P&L</span>
+                <span class="metric-value font-mono" id="statProfitVal">$0.00</span>
+            </div>
+        </section>
+
+        <!-- Live Progress Status -->
+        <div id="progressBanner" class="progress-bar-wrap hidden">
+            <div class="progress-info-row">
+                <div class="progress-msg">
+                    <div class="spinner-flat"></div>
+                    <span id="progressText">Сканирование лотов...</span>
+                </div>
+                <button id="stopBtn" class="btn-flat btn-danger-sm">Остановить</button>
+            </div>
+            <div class="progress-track">
+                <div id="progressBar" class="progress-fill" style="width: 0%;"></div>
+            </div>
+        </div>
+
+        <!-- Controls Toolbar -->
+        <section class="controls-bar">
+            <div class="search-input-wrap">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input type="text" id="searchInput" placeholder="Поиск по скину..." autocomplete="off">
+            </div>
+
+            <div class="filter-group">
+                <button class="filter-tab active" data-filter="all">Все <span class="tab-count" id="countAll">0</span></button>
+                <button class="filter-tab" data-filter="rank1">#1 <span class="tab-count text-green" id="countRank1">0</span></button>
+                <button class="filter-tab" data-filter="top3">#2 - #3 <span class="tab-count text-amber" id="countTop3">0</span></button>
+                <button class="filter-tab" data-filter="rank4">#4+ <span class="tab-count text-slate" id="countRank4">0</span></button>
+            </div>
+
+            <div class="sort-wrap">
+                <label for="sortSelect" class="sort-label">Сортировка:</label>
+                <select id="sortSelect" class="flat-select">
+                    <option value="rank_asc">Позиция: Сначала лучшие (#1, #2...)</option>
+                    <option value="rank_desc">Позиция: Сначала дальние (#4+, #3...)</option>
+                    <option value="price_desc">Цена: От дорогих к дешевым</option>
+                    <option value="price_asc">Цена: От дешевых к дорогим</option>
+                    <option value="profit_desc">Профит: По убыванию</option>
+                    <option value="float_asc">Float: От меньшего к большему</option>
+                </select>
+            </div>
+        </section>
+
+        <!-- Empty Welcome / Initial State -->
+        <div id="emptyState" class="empty-box">
+            <h3>Нет данных для отображения</h3>
+            <p>Нажмите <strong>«Сканировать лоты»</strong>, чтобы загрузить ваши активные предметы на DMarket, цены их покупки и определить их позиции в диапазонах флоата.</p>
+            <div class="empty-actions">
+                <button id="emptyScanBtn" class="btn-flat btn-accent">Запустить сканирование</button>
+                <button id="emptyAutoDetectBtn" class="btn-flat btn-secondary">Найти сессию браузера</button>
+            </div>
+        </div>
+
+        <!-- Vertical Items List -->
+        <main id="itemsListSection" class="items-list-container hidden">
+            <div class="list-header-row">
+                <div class="col-item">ПРЕДМЕТ</div>
+                <div class="col-float">FLOAT</div>
+                <div class="col-rank">ПОЗИЦИЯ</div>
+                <div class="col-buy">ЦЕНА ПОКУПКИ</div>
+                <div class="col-price">ПРОДАЖА / P&L (–2%)</div>
+                <div class="col-actions">ДЕЙСТВИЯ</div>
+            </div>
+
+            <div id="itemsContainer" class="items-vertical-list">
+                <!-- Rendered dynamically via app.js -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Competitors Modal -->
+    <div id="competitorsModal" class="modal-overlay hidden">
+        <div class="modal-window">
+            <div class="modal-head">
+                <div class="modal-title-box">
+                    <div class="modal-title-row">
+                        <h3 id="modalTitle">Конкуренты в категории флота</h3>
+                        <a id="modalDMarketLink" href="#" target="_blank" rel="noopener noreferrer" class="btn-dmarket-header" title="Открыть листинги этой категории на DMarket">
+                            <span>DMarket</span>
+                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                        </a>
+                    </div>
+                    <span id="modalSubtitle" class="modal-sub"></span>
+                </div>
+                <div class="modal-head-actions">
+                    <button id="modalRefreshBtn" class="btn-flat btn-modal-refresh" onclick="refreshCurrentModalItem()" title="Обновить предложения этого скина с DMarket в реальном времени">
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" id="modalRefreshIcon">
+                            <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                        </svg>
+                        <span id="modalRefreshText">Обновить</span>
+                    </button>
+                    <button id="modalCloseBtn" class="btn-close" title="Закрыть">&times;</button>
+                </div>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Dynamically loaded competitors table -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings & Browser Session Modal -->
+    <div id="settingsModal" class="modal-overlay hidden">
+        <div class="modal-window modal-window-md">
+            <div class="modal-head">
+                <div class="modal-title-box">
+                    <h3>Подключение к DMarket (Без API ключей)</h3>
+                    <span class="modal-sub">Работает через браузерные веб-сессии, Cookies и расширение Manifest V3</span>
+                </div>
+                <button id="settingsCloseBtn" class="btn-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- Section 1: Auto detect -->
+                <div class="settings-card">
+                    <div class="settings-card-head">
+                        <div>
+                            <h4>Авто-определение из браузеров на ПК</h4>
+                            <p class="card-desc">Автоматически находит открытую сессию DMarket в Google Chrome, Microsoft Edge, Brave, Opera или Opera GX.</p>
+                        </div>
+                    </div>
+                    <div class="auto-detect-box">
+                        <button id="modalAutoDetectBtn" class="btn-flat btn-accent">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>
+                            <span>Найти сессию в браузере</span>
+                        </button>
+                        <span id="autoDetectResultStatus" class="detect-status-text"></span>
+                    </div>
+                </div>
+
+                <!-- Section 2: Browser Extension info -->
+                <div class="settings-card border-blue-accent">
+                    <div class="settings-card-head">
+                        <div>
+                            <h4>Браузерное расширение (как cs2-profit-checker)</h4>
+                            <p class="card-desc">Установите папку <code>extension/</code> в Chrome/Brave/Edge («Загрузить распакованное расширение»). Расширение считывает куки напрямую через браузерный API без каких-либо настроек!</p>
+                        </div>
+                    </div>
+                    <div class="extension-sync-status">
+                        <span class="sync-dot active"></span>
+                        <span>Эндпоинт авто-синхронизации расширения активен: <code>http://127.0.0.1:5001/api/sync-cookies</code></span>
+                    </div>
+                </div>
+
+                <!-- Section 3: Manual Cookie / Token Fallback -->
+                <div class="settings-card">
+                    <div class="settings-card-head">
+                        <div>
+                            <h4>Ручной ввод Cookies / Bearer JWT (Резерв)</h4>
+                            <p class="card-desc">Если авто-поиск заблокирован антивирусом, вставьте строку <code>Cookie</code> или токен из вкладки Network в DevTools (F12).</p>
+                        </div>
+                    </div>
+                    <div class="form-group mt-2">
+                        <label for="manualCookiesInput" class="form-label">Строка Cookie DMarket:</label>
+                        <textarea id="manualCookiesInput" class="flat-textarea" rows="3" placeholder="dmarket-jwt=...; session=..."></textarea>
+                    </div>
+                    <div class="settings-actions-row">
+                        <button id="saveManualCookiesBtn" class="btn-flat btn-accent">Сохранить куки</button>
+                        <button id="testSessionBtn" class="btn-flat btn-secondary">Проверить сессию</button>
+                    </div>
+                    <div id="sessionTestOutput" class="test-result-box hidden"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Buy Confirmation Modal -->
+    <div id="buyConfirmModal" class="modal-overlay hidden">
+        <div class="modal-window modal-window-sm">
+            <div class="modal-head">
+                <div class="modal-title-box">
+                    <h3 class="text-amber">Подтверждение покупки</h3>
+                    <span class="modal-sub">Списание средств с баланса DMarket через браузерную сессию</span>
+                </div>
+                <button id="buyConfirmCloseBtn" class="btn-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="buy-confirm-box">
+                    <p class="buy-confirm-title" id="buyConfirmItemTitle">Предмет</p>
+                    <div class="buy-confirm-details">
+                        <div class="buy-detail-row">
+                            <span class="buy-detail-lbl">Цена списания:</span>
+                            <span class="buy-detail-val text-green font-mono" id="buyConfirmPrice">$0.00</span>
+                        </div>
+                        <div class="buy-detail-row">
+                            <span class="buy-detail-lbl">Float:</span>
+                            <span class="buy-detail-val font-mono" id="buyConfirmFloat">—</span>
+                        </div>
+                        <div class="buy-detail-row">
+                            <span class="buy-detail-lbl">Seed:</span>
+                            <span class="buy-detail-val" id="buyConfirmSeed">—</span>
+                        </div>
+                    </div>
+                    <div class="buy-warning-note">
+                        Средства будут моментально списаны с вашего счета DMarket для выкупа этого лота.
+                    </div>
+                    <div class="buy-double-confirm-wrap">
+                        <label class="buy-confirm-check-label" for="buyConfirmCheckbox">
+                            <input type="checkbox" id="buyConfirmCheckbox">
+                            <span>Подтверждаю списание реального баланса DMarket</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="buy-confirm-actions">
+                    <button id="buyCancelBtn" class="btn-flat btn-secondary">Отмена</button>
+                    <button id="buyExecuteBtn" class="btn-flat btn-buy-execute" disabled>
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                        <span id="buyExecuteBtnText">Купить лот</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
