@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="../../assets/style.css">
 </head>
 <body class="flat-theme">
 
@@ -135,7 +135,8 @@
                 <div class="col-float">FLOAT</div>
                 <div class="col-rank">RANK</div>
                 <div class="col-buy">BUY PRICE</div>
-                <div class="col-price">SELL / P&L (–2%)</div>
+                <div class="col-min">MINIMAL PRICE</div>
+                <div class="col-price">SELL & P&L (Gross)</div>
                 <div class="col-actions">ACTIONS</div>
             </div>
 
@@ -244,9 +245,9 @@
     <!-- Toast Notification Container -->
     <div id="toastContainer" class="toast-container"></div>
 
-    <script type="module" src="wear_configs.js"></script>
-    <script type="module" src="api/index.js"></script>
-    <script type="module" src="tracker_service.js"></script>
+    <script type="module" src="../utils/wear_configs.js"></script>
+    <script type="module" src="../services/api/index.js"></script>
+    <script type="module" src="../services/tracker_service.js"></script>
     <script type="module" src="dashboard.js"></script>
 </body>
 </html>

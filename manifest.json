@@ -1,18 +1,18 @@
 {
   "manifest_version": 3,
   "name": "DMarket Float & Profit Tracker",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "Автономный трекер категорий флоата и позиций лотов DMarket CS2 (Архитектура cyberbebebe)",
   "icons": {
-    "16": "icon.png",
-    "48": "icon.png",
-    "128": "icon.png"
+    "16": "assets/icon.png",
+    "48": "assets/icon.png",
+    "128": "assets/icon.png"
   },
   "action": {
     "default_title": "Открыть DMarket Float Tracker"
   },
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "src/scripts/background.js"
   },
   "permissions": [
     "storage",
@@ -29,17 +29,7 @@
         "*://*.dmarket.com/*"
       ],
       "js": [
-        "intercept.js"
-      ],
-      "run_at": "document_start",
-      "world": "MAIN"
-    },
-    {
-      "matches": [
-        "*://*.dmarket.com/*"
-      ],
-      "js": [
-        "content.js"
+        "src/scripts/content.js"
       ],
       "run_at": "document_idle",
       "world": "ISOLATED"
@@ -48,9 +38,9 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "dashboard.html",
-        "style.css",
-        "icon.png"
+        "src/pages/dashboard.html",
+        "assets/style.css",
+        "assets/icon.png"
       ],
       "matches": [
         "*://*.dmarket.com/*"

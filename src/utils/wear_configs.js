@@ -11,7 +11,7 @@ const WEAR_CONFIGS = {
         short: "MW",
         dmarket_exterior: "minimal wear",
         total_range: [0.07, 0.15],
-        tiers: [0.08, 0.09, 0.10, 0.12, 0.15]
+        tiers: [0.08, 0.09, 0.10, 0.11, 0.15]
     },
     "Field-Tested": {
         short: "FT",
@@ -23,19 +23,19 @@ const WEAR_CONFIGS = {
         short: "WW",
         dmarket_exterior: "well-worn",
         total_range: [0.38, 0.45],
-        tiers: [0.40, 0.42, 0.45]
+        tiers: [0.4, 0.45]
     },
     "Battle-Scarred": {
         short: "BS",
         dmarket_exterior: "battle-scarred",
         total_range: [0.45, 1.00],
-        tiers: [0.50, 0.60, 0.75, 0.90, 1.00]
+        tiers: [0.50, 0.63, 1.00]
     }
 };
 
 function detectWearFromTitle(title) {
     if (!title) return ["", "Field-Tested"];
-    
+
     for (const [wearName, cfg] of Object.entries(WEAR_CONFIGS)) {
         const escaped = wearName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const reg = new RegExp(`\\s*\\(${escaped}\\)\\s*$`, 'i');

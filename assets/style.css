@@ -17,7 +17,7 @@
 
     --accent-blue: #3b82f6;
     --accent-blue-hover: #2563eb;
-    
+
     --green-bg: #064e3b;
     --green-border: #059669;
     --green-text: #34d399;
@@ -74,10 +74,21 @@ body.flat-theme {
     font-family: var(--font-mono);
 }
 
-.text-green { color: var(--green-text) !important; }
-.text-amber { color: var(--amber-text) !important; }
-.text-slate { color: var(--slate-text) !important; }
-.text-red { color: var(--red-text) !important; }
+.text-green {
+    color: var(--green-text) !important;
+}
+
+.text-amber {
+    color: var(--amber-text) !important;
+}
+
+.text-slate {
+    color: var(--slate-text) !important;
+}
+
+.text-red {
+    color: var(--red-text) !important;
+}
 
 /* Top Navbar */
 .navbar {
@@ -310,7 +321,9 @@ body.flat-theme {
 }
 
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .progress-track {
@@ -472,7 +485,7 @@ body.flat-theme {
 
 .list-header-row {
     display: grid;
-    grid-template-columns: minmax(260px, 2.5fr) 110px 110px 115px minmax(200px, 1.4fr) 300px;
+    grid-template-columns: minmax(240px, 2.5fr) 100px 100px 100px 100px minmax(180px, 1.4fr) 300px;
     gap: 14px;
     padding: 11px 18px;
     background-color: var(--bg-subtle);
@@ -491,7 +504,7 @@ body.flat-theme {
 /* List Item Row */
 .item-row {
     display: grid;
-    grid-template-columns: minmax(260px, 2.5fr) 110px 110px 115px minmax(200px, 1.4fr) 300px;
+    grid-template-columns: minmax(240px, 2.5fr) 100px 100px 100px 100px minmax(180px, 1.4fr) 300px;
     gap: 14px;
     align-items: center;
     padding: 12px 18px;
@@ -623,7 +636,10 @@ body.flat-theme {
     justify-content: flex-start;
 }
 
-.rank-pill, .badge-rank-1, .badge-rank-top3, .badge-rank-other {
+.rank-pill,
+.badge-rank-1,
+.badge-rank-top3,
+.badge-rank-other {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -637,21 +653,24 @@ body.flat-theme {
     letter-spacing: 0.3px;
 }
 
-.rank-pill.rank-1, .badge-rank-1 {
+.rank-pill.rank-1,
+.badge-rank-1 {
     background-color: rgba(16, 185, 129, 0.15);
     border: 1px solid rgba(16, 185, 129, 0.5);
     color: #34d399;
     box-shadow: 0 0 10px rgba(16, 185, 129, 0.12);
 }
 
-.rank-pill.rank-top3, .badge-rank-top3 {
+.rank-pill.rank-top3,
+.badge-rank-top3 {
     background-color: rgba(245, 158, 11, 0.15);
     border: 1px solid rgba(245, 158, 11, 0.5);
     color: #fbbf24;
     box-shadow: 0 0 10px rgba(245, 158, 11, 0.12);
 }
 
-.rank-pill.rank-other, .badge-rank-other {
+.rank-pill.rank-other,
+.badge-rank-other {
     background-color: rgba(148, 163, 184, 0.12);
     border: 1px solid rgba(148, 163, 184, 0.35);
     color: #94a3b8;
@@ -791,6 +810,7 @@ body.flat-theme {
         opacity: 0;
         transform: scale(0.96) translateY(6px);
     }
+
     to {
         opacity: 1;
         transform: scale(1) translateY(0);
@@ -1287,13 +1307,13 @@ body.flat-theme {
     .list-header-row {
         display: none;
     }
-    
+
     .item-row {
         grid-template-columns: 1fr;
         gap: 10px;
         padding: 14px;
     }
-    
+
     .col-actions {
         margin-top: 6px;
     }
@@ -1490,7 +1510,6 @@ body.flat-theme {
     color: #ffffff;
 }
 
-}
 
 /* Outbid Picker Styles */
 .outbid-picker-backdrop {
@@ -1514,7 +1533,7 @@ body.flat-theme {
     padding: 15px;
     min-width: 280px;
     max-width: 90%;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
     animation: scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 

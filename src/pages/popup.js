@@ -4,7 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const openBtn = document.getElementById("openDashboardBtn");
     if (openBtn) {
         openBtn.addEventListener("click", () => {
-            const url = chrome.runtime.getURL("dashboard.html");
+            const url = chrome.runtime.getURL("src/pages/dashboard.html");
             chrome.tabs.create({ url: url });
         });
     }

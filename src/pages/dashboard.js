@@ -1,5 +1,5 @@
-import { DMarketAPI, DMarketLogger } from './api/index.js';
-import { fetchAndAnalyzeAllOffers, analyzeSingleOffer } from './tracker_service.js';
+import { DMarketAPI, DMarketLogger } from '../services/api/index.js';
+import { fetchAndAnalyzeAllOffers, analyzeSingleOffer } from '../services/tracker_service.js';
 
 // DMarket Float Tracker Standalone Dashboard Controller (Manifest V3 - Strict CSP Compliant)
 
@@ -215,6 +215,13 @@ function initEvents() {
                     hideOutbidPicker();
                     outbidCompetitor(userOfferId, compPrice);
                 }
+                return;
+            }
+
+            // Cancel outbid picker
+            const cancelPickerBtn = e.target.closest('[data-action="cancel-outbid-picker"]');
+            if (cancelPickerBtn) {
+                hideOutbidPicker();
                 return;
             }
 
@@ -496,11 +503,6 @@ function renderItems(items) {
         const rankText = `${item.rank} of ${item.total_in_category}`;
 
         let diffHtml = '';
-        if (item.rank === 1) {
-            diffHtml = `<span class="price-diff-tag diff-cheapest">Min. price (#1)</span>`;
-        } else if (item.price_diff_usd > 0) {
-            diffHtml = `<span class="price-diff-tag diff-over">+${item.price_diff_usd.toFixed(2)}$ to #1 (+${item.price_diff_pct}%)</span>`;
-        }
 
         let profitHtml = '';
         if (item.profit_usd !== null && item.profit_usd !== undefined) {
@@ -510,6 +512,8 @@ function renderItems(items) {
             profitHtml = `<span class="profit-badge ${badgeCls}">${sign}${item.profit_pct}% (${sign}$${item.profit_usd.toFixed(2)})</span>`;
         }
 
+        const fadeHtml = item.fade_pct ? `<span class="phase-chip">${item.fade_pct}% Fade</span>` : '';
+        const tierHtml = item.tier ? `<span class="phase-chip">${item.tier}</span>` : '';
         const phaseHtml = item.phase_display ? `<span class="phase-chip">${item.phase_display}</span>` : '';
         const seedHtml = item.paint_seed ? `<span class="seed-chip">Seed: ${item.paint_seed}</span>` : '';
         const marketUrl = getDMarketSearchUrl(item);
@@ -523,7 +527,8 @@ function renderItems(items) {
                     <div class="item-meta">
                         <span class="item-name" title="${item.title}">${item.title}</span>
                         <div class="item-tags">
-                            <span class="wear-chip">${item.wear_short || 'FT'}</span>
+                            ${fadeHtml}
+                            ${tierHtml}
                             ${phaseHtml}
                             ${seedHtml}
                         </div>
@@ -543,14 +548,16 @@ function renderItems(items) {
                     <span class="buy-price-text">${item.buy_price_str}</span>
                 </div>
 
+                <div class="col-min font-mono" style="color: #34d399; font-weight: 600;">
+                    ${item.lowest_cat_price_str}
+                </div>
+
                 <div class="col-price">
                     <div class="price-row-top">
                         <span class="price-main font-mono">${item.price_str}</span>
-                        ${profitHtml}
                     </div>
                     <div class="price-sub">
-                        <span>Min: ${item.lowest_cat_price_str}</span>
-                        ${diffHtml}
+                        ${profitHtml}
                     </div>
                 </div>
 
@@ -597,8 +604,6 @@ async function saveItemPrice(offerId, explicitPrice = null) {
     const altIds = [offerId];
     if (item) {
         if (item.raw_offer_id && !altIds.includes(item.raw_offer_id)) altIds.push(item.raw_offer_id);
-        if (item.item_id && !altIds.includes(item.item_id)) altIds.push(item.item_id);
-        if (item.asset_id && !altIds.includes(item.asset_id)) altIds.push(item.asset_id);
     }
 
     try {
@@ -606,8 +611,34 @@ async function saveItemPrice(offerId, explicitPrice = null) {
         if (res.success) {
             showToast(`Price successfully updated to $${newPrice.toFixed(2)}!`, 'success', 3500);
 
-            const item = allItems.find(x => x.offer_id === offerId);
+            const item = allItems.find(x => x.offer_id === offerId || x.raw_offer_id === offerId || x.item_id === offerId);
             if (item) {
+                let currentOfferId = offerId;
+                
+                // DMarket changes offerId on reprice. Grab the new one from response.
+                if (res.data && res.data.created && res.data.created.length > 0) {
+                    // Try to match by assetId if possible, else take first
+                    const createdItem = res.data.created.find(c => c.assetId === item.asset_id) || res.data.created[0];
+                    if (createdItem && createdItem.offerId) {
+                        const newOfferId = createdItem.offerId;
+                        item.offer_id = newOfferId;
+                        item.raw_offer_id = newOfferId;
+                        
+                        // Update DOM elements if they exist
+                        const row = document.getElementById(`item-row-${currentOfferId}`);
+                        if (row) row.id = `item-row-${newOfferId}`;
+                        
+                        document.querySelectorAll(`[data-offer-id="${currentOfferId}"]`).forEach(el => {
+                            el.dataset.offerId = newOfferId;
+                        });
+                        
+                        const inputPrice = document.getElementById(`input-price-${currentOfferId}`);
+                        if (inputPrice) inputPrice.id = `input-price-${newOfferId}`;
+                        
+                        currentOfferId = newOfferId;
+                    }
+                }
+
                 item.price_usd = newPrice;
                 item.price_str = `$${newPrice.toFixed(2)}`;
 
@@ -619,15 +650,24 @@ async function saveItemPrice(offerId, explicitPrice = null) {
                 }
 
                 if (item.competitors) {
-                    item.competitors.forEach(c => {
-                        if (c.is_user_offer || c.offer_id === offerId) {
-                            c.price_usd = newPrice;
+                    const allSiblingsToUpdate = allItems.filter(x => x.title === item.title && x.wear_short === item.wear_short);
+                    
+                    allSiblingsToUpdate.forEach(sib => {
+                        if (sib.competitors) {
+                            sib.competitors.forEach(c => {
+                                if (c.offer_id === offerId || c.offer_id === currentOfferId || (sib.offer_id === currentOfferId && c.is_user_offer && c.float === item.float_val)) {
+                                    c.price_usd = newPrice;
+                                    c.offer_id = currentOfferId;
+                                    c.is_user_offer = true;
+                                }
+                            });
+                            sib.competitors.sort((a, b) => a.price_usd - b.price_usd);
                         }
                     });
-                    item.competitors.sort((a, b) => a.price_usd - b.price_usd);
+
                     let userRank = 1;
                     for (let i = 0; i < item.competitors.length; i++) {
-                        if (item.competitors[i].is_user_offer || item.competitors[i].offer_id === offerId) {
+                        if (item.competitors[i].offer_id === currentOfferId) {
                             userRank = i + 1;
                             break;
                         }
@@ -1020,12 +1060,28 @@ function showOutbidPicker(compPrice) {
 
     const newPrice = Math.max(0.01, Math.round((compPrice - 0.01) * 100) / 100);
 
+    const seenIds = new Set();
+    let mergedCompetitors = [];
+    siblingItems.forEach(sib => {
+        if (sib.competitors) {
+            sib.competitors.forEach(c => {
+                if (!seenIds.has(c.offer_id)) {
+                    seenIds.add(c.offer_id);
+                    mergedCompetitors.push(c);
+                }
+            });
+        }
+    });
+
     const buttonsHtml = siblingItems.map(s => {
         const sFloat = (s.float_val !== null && s.float_val !== undefined) ? s.float_val.toFixed(4) : '?';
         const sSeed = s.paint_seed || '?';
+        const cMatch = mergedCompetitors.find(c => c.offer_id === s.offer_id);
+        const displayPrice = cMatch ? cMatch.price_usd : s.price_usd;
+
         return `
             <button class="outbid-picker-item" data-action="pick-outbid-offer" data-comp-price="${compPrice}" data-user-offer-id="${s.offer_id}">
-                <span class="font-mono" style="color: var(--green-text); font-weight: 700;">$${s.price_usd.toFixed(2)}</span>
+                <span class="font-mono" style="color: var(--green-text); font-weight: 700;">$${displayPrice.toFixed(2)}</span>
                 <span style="color: var(--text-secondary); font-size: 11px;">Float: ${sFloat} | Seed: ${sSeed}</span>
                 <span style="color: var(--text-muted); font-size: 10px;">\u2192 $${newPrice.toFixed(2)}</span>
             </button>
@@ -1044,7 +1100,7 @@ function showOutbidPicker(compPrice) {
             <div class="outbid-picker-list">
                 ${buttonsHtml}
             </div>
-            <button class="outbid-picker-cancel" onclick="document.querySelector('.outbid-picker-backdrop')?.remove()">Cancel</button>
+            <button class="outbid-picker-cancel" data-action="cancel-outbid-picker">Cancel</button>
         </div>
     `;
 
