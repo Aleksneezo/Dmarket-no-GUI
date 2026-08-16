@@ -1,5 +1,5 @@
-import { WEAR_CONFIGS, getFloatCategory } from './wear_configs.js';
-import { PATTERNS } from './csfloat_patterns.js';
+import { WEAR_CONFIGS, getFloatCategory } from '../utils/wear_configs.js';
+import { PATTERNS } from '../utils/csfloat_patterns.js';
 import { DMarketAPI } from './api/endpoints.js';
 import { DMarketLogger } from './api/logger.js';
 
@@ -58,7 +58,14 @@ function getWeaponId(title) {
 
 function getPaintIndex(title, phase) {
     const tLower = title.toLowerCase();
-    if (tLower.includes("marble fade")) return 413;
+
+    // Only Talon uses alternative paint indexes for Doppler and Marble Fade
+    const isTalon = tLower.includes("talon");
+    // Butterfly Knife uses an alternative paint index ONLY for Doppler Phase 2
+    const isButterfly = tLower.includes("butterfly");
+
+    if (tLower.includes("marble fade")) return isTalon ? 856 : 413;
+
     if (tLower.includes("gamma doppler")) {
         if (phase === "Phase 1") return 569;
         if (phase === "Phase 2") return 570;
@@ -66,15 +73,21 @@ function getPaintIndex(title, phase) {
         if (phase === "Phase 4") return 572;
         if (phase === "Emerald") return 568;
     }
+
     if (tLower.includes("doppler")) {
-        if (phase === "Phase 1") return 418;
-        if (phase === "Phase 2") return 419;
-        if (phase === "Phase 3") return 420;
-        if (phase === "Phase 4") return 421;
+        if (phase === "Phase 1") return isTalon ? 852 : 418;
+        if (phase === "Phase 2") {
+            if (isTalon) return 853;
+            if (isButterfly) return 618;
+            return 419;
+        }
+        if (phase === "Phase 3") return isTalon ? 854 : 420;
+        if (phase === "Phase 4") return isTalon ? 855 : 421;
         if (phase === "Ruby") return 415;
         if (phase === "Sapphire") return 416;
         if (phase === "Black Pearl") return 417;
     }
+
     return null;
 }
 
@@ -83,12 +96,12 @@ function getPatternTierData(title, phase, paintSeed) {
     const weaponId = getWeaponId(title);
     const paintIndex = getPaintIndex(title, phase);
     if (!weaponId || !paintIndex) return { tier: null, index: -1 };
-    
+
     const weaponPatterns = PATTERNS[weaponId];
     if (!weaponPatterns) return { tier: null, index: -1 };
     const paintPatterns = weaponPatterns[paintIndex];
     if (!paintPatterns || !paintPatterns.tiers) return { tier: null, index: -1 };
-    
+
     const tierKeys = Object.keys(paintPatterns.tiers);
     for (let i = 0; i < tierKeys.length; i++) {
         if (paintPatterns.tiers[tierKeys[i]].includes(Number(paintSeed))) {
@@ -126,7 +139,7 @@ async function analyzeSingleOffer(rawOffer, buyHistoryMap = {}, closedTrades = [
     const rawAssetId = rawOffer.assetId || rawOffer.AssetId || (rawOffer.attributes && rawOffer.attributes.id) || rawItemId || null;
     const offerId = rawOfferId || rawItemId || rawAssetId || "item-" + Math.random().toString(36).substr(2, 9);
     const fullTitle = rawOffer.title || attrs.title || attrs.name || rawOffer.name || rawOffer.Title || extraData.name || "Unknown Skin";
-    
+
     // Calculate item price
     let priceUsd = 0;
     if (rawOffer.priceCents !== undefined && rawOffer.priceCents !== null) {
@@ -156,14 +169,6 @@ async function analyzeSingleOffer(rawOffer, buyHistoryMap = {}, closedTrades = [
     let buyTrade = null;
     if (buyHistoryMap && assetId && buyHistoryMap[assetId]) {
         buyTrade = buyHistoryMap[assetId];
-    } else if (closedTrades && closedTrades.length > 0) {
-        for (const tr of closedTrades) {
-            const tTitle = tr.Title || tr.title || (tr.Attributes && tr.Attributes.title) || "";
-            if (isExactDMarketMatch(tTitle, fullTitle)) {
-                buyTrade = tr;
-                break;
-            }
-        }
     }
 
     // Profit calculation (2% DMarket commission)
@@ -195,7 +200,7 @@ async function analyzeSingleOffer(rawOffer, buyHistoryMap = {}, closedTrades = [
     let floatVal = extractFloatFromRawOffer(rawOffer);
 
     let { wearShort, catLabel, minF, maxF, qualityMin, dmarket_exterior, floatPartValue } = getFloatCategory(fullTitle, floatVal);
-    
+
     // Override maxF if group max is provided (to unite items of same wear)
     const baseTitleForGroup = fullTitle.replace(/\s*\([^)]+\)\s*$/, '').trim().toLowerCase();
     const groupKey = baseTitleForGroup + "_" + wearShort;
@@ -206,24 +211,55 @@ async function analyzeSingleOffer(rawOffer, buyHistoryMap = {}, closedTrades = [
     const paintSeed = cs2Data.paintSeed || extraData.paintSeed || attrs.paintSeed || rawOffer.paintSeed || null;
 
     let fadePct = null;
+    if (cs2Data.fadePercent !== undefined) fadePct = parseFloat(cs2Data.fadePercent);
+    else if (extraData.fadePercent !== undefined) fadePct = parseFloat(extraData.fadePercent);
+    else if (attrs.fadePercent !== undefined) fadePct = parseFloat(attrs.fadePercent);
+    else if (rawOffer.fadePercent !== undefined) fadePct = parseFloat(rawOffer.fadePercent);
+
     const isFade = fullTitle.toLowerCase().includes("fade") && !fullTitle.toLowerCase().includes("marble");
-    if (isFade && itemPhase) {
+    if (isFade && fadePct === null && itemPhase) {
         const match = itemPhase.match(/(\d+(?:\.\d+)?)%/);
         if (match) fadePct = parseFloat(match[1]);
     }
-    
+
     const itemTierData = getPatternTierData(fullTitle, itemPhase, paintSeed);
 
     // Search Market Offers for competitors
     const baseTitle = fullTitle.replace(/\s*\([^)]+\)\s*$/, '').trim();
     const searchTitle = baseTitle.replace(/^[★*]\s*/, '').trim();
 
-    let extraTree = null;
+    let extraTree = [];
     if (searchTitle.toLowerCase().includes("stattrak")) {
-        extraTree = "categoryPath[]=csgo/weapons/stattrak";
+        extraTree.push("stattrak[]=true");
+    } else {
+        extraTree.push("stattrak[]=false");
     }
 
-    let marketData = await DMarketAPI.getMarketOffers(searchTitle, dmarket_exterior, itemPhase, extraTree, 100, null, fullTitle);
+    if (searchTitle.toLowerCase().includes("souvenir")) {
+        extraTree.push("souvenir[]=true");
+    } else {
+        extraTree.push("souvenir[]=false");
+    }
+
+    if (fullTitle.toLowerCase().includes("fade") && !fullTitle.toLowerCase().includes("marble")) {
+        extraTree.push("family[]=fade");
+        if (fadePct !== null) {
+            extraTree.push(`fadePercentFrom[]=${Math.floor(fadePct)}`);
+        }
+    } else if (fullTitle.toLowerCase().includes("marble fade")) {
+        extraTree.push("family[]=marble fade");
+    }
+
+    if (minF !== null && minF !== undefined) {
+        extraTree.push(`floatValueFrom[]=${minF}`);
+    }
+    if (maxF !== null && maxF !== undefined) {
+        extraTree.push(`floatValueTo[]=${maxF}`);
+    }
+
+    const treeFiltersStr = extraTree.length > 0 ? extraTree.join(",") : null;
+
+    let marketData = await DMarketAPI.getMarketOffers(fullTitle, treeFiltersStr, 100);
     let marketOffers = [];
     if (marketData) {
         if (Array.isArray(marketData.objects)) marketOffers = marketData.objects;
@@ -251,7 +287,7 @@ async function analyzeSingleOffer(rawOffer, buyHistoryMap = {}, closedTrades = [
 
         if (isFade) {
             if (fadePct !== null && mFadePct !== null) {
-                if (mFadePct < fadePct) continue; 
+                if (mFadePct < fadePct) continue;
             }
         } else if (itemPhase) {
             if (mPh && mPh !== itemPhase) continue;
@@ -386,7 +422,7 @@ async function analyzeSingleOffer(rawOffer, buyHistoryMap = {}, closedTrades = [
         profit_usd: profitUsd,
         profit_pct: profitPct,
         float_val: floatVal,
-        float_str: floatVal !== null ? floatVal.toFixed(4) : "—",
+        float_str: floatVal !== null ? floatVal.toFixed(8) : "—",
         category_label: catLabel,
         cat_min: minF,
         cat_max: maxF,
@@ -404,7 +440,7 @@ async function analyzeSingleOffer(rawOffer, buyHistoryMap = {}, closedTrades = [
         price_diff_usd: priceDiffUsd,
         price_diff_pct: priceDiffPct,
         total_in_category: totalInCategory,
-        competitors: categoryMatchedOffers.slice(0, 15),
+        competitors: categoryMatchedOffers,
         market_url: marketUrl,
         offer_url: marketUrl
     };
