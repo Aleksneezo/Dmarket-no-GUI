@@ -218,6 +218,13 @@ function initEvents() {
                 return;
             }
 
+            // Cancel outbid picker
+            const cancelPickerBtn = e.target.closest('[data-action="cancel-outbid-picker"]');
+            if (cancelPickerBtn) {
+                hideOutbidPicker();
+                return;
+            }
+
             // Close the picker if clicking its backdrop
             const pickerBackdrop = e.target.closest('.outbid-picker-backdrop');
             if (pickerBackdrop && e.target === pickerBackdrop) {
@@ -1044,12 +1051,28 @@ function showOutbidPicker(compPrice) {
 
     const newPrice = Math.max(0.01, Math.round((compPrice - 0.01) * 100) / 100);
 
+    const seenIds = new Set();
+    let mergedCompetitors = [];
+    siblingItems.forEach(sib => {
+        if (sib.competitors) {
+            sib.competitors.forEach(c => {
+                if (!seenIds.has(c.offer_id)) {
+                    seenIds.add(c.offer_id);
+                    mergedCompetitors.push(c);
+                }
+            });
+        }
+    });
+
     const buttonsHtml = siblingItems.map(s => {
         const sFloat = (s.float_val !== null && s.float_val !== undefined) ? s.float_val.toFixed(4) : '?';
         const sSeed = s.paint_seed || '?';
+        const cMatch = mergedCompetitors.find(c => c.offer_id === s.offer_id);
+        const displayPrice = cMatch ? cMatch.price_usd : s.price_usd;
+
         return `
             <button class="outbid-picker-item" data-action="pick-outbid-offer" data-comp-price="${compPrice}" data-user-offer-id="${s.offer_id}">
-                <span class="font-mono" style="color: var(--green-text); font-weight: 700;">$${s.price_usd.toFixed(2)}</span>
+                <span class="font-mono" style="color: var(--green-text); font-weight: 700;">$${displayPrice.toFixed(2)}</span>
                 <span style="color: var(--text-secondary); font-size: 11px;">Float: ${sFloat} | Seed: ${sSeed}</span>
                 <span style="color: var(--text-muted); font-size: 10px;">\u2192 $${newPrice.toFixed(2)}</span>
             </button>
@@ -1068,7 +1091,7 @@ function showOutbidPicker(compPrice) {
             <div class="outbid-picker-list">
                 ${buttonsHtml}
             </div>
-            <button class="outbid-picker-cancel" onclick="document.querySelector('.outbid-picker-backdrop')?.remove()">Cancel</button>
+            <button class="outbid-picker-cancel" data-action="cancel-outbid-picker">Cancel</button>
         </div>
     `;
 
