@@ -650,15 +650,24 @@ async function saveItemPrice(offerId, explicitPrice = null) {
                 }
 
                 if (item.competitors) {
-                    item.competitors.forEach(c => {
-                        if (c.is_user_offer || c.offer_id === offerId) {
-                            c.price_usd = newPrice;
+                    const allSiblingsToUpdate = allItems.filter(x => x.title === item.title && x.wear_short === item.wear_short);
+                    
+                    allSiblingsToUpdate.forEach(sib => {
+                        if (sib.competitors) {
+                            sib.competitors.forEach(c => {
+                                if (c.offer_id === offerId || c.offer_id === currentOfferId || (sib.offer_id === currentOfferId && c.is_user_offer && c.float === item.float_val)) {
+                                    c.price_usd = newPrice;
+                                    c.offer_id = currentOfferId;
+                                    c.is_user_offer = true;
+                                }
+                            });
+                            sib.competitors.sort((a, b) => a.price_usd - b.price_usd);
                         }
                     });
-                    item.competitors.sort((a, b) => a.price_usd - b.price_usd);
+
                     let userRank = 1;
                     for (let i = 0; i < item.competitors.length; i++) {
-                        if (item.competitors[i].is_user_offer || item.competitors[i].offer_id === offerId) {
+                        if (item.competitors[i].offer_id === currentOfferId) {
                             userRank = i + 1;
                             break;
                         }
