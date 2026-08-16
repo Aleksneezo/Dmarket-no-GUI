@@ -77,7 +77,7 @@ function getFloatCategory(titleOrWear, floatVal) {
             const tMax = tiers[i];
             if (floatVal <= (tMax + 1e-6)) {
                 selectedUpper = tMax;
-                selectedLower = i > 0 ? tiers[i-1] : minWear;
+                selectedLower = minWear; // Always use bottom of wear quality
                 partIndex = i;
                 break;
             }

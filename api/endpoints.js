@@ -158,14 +158,14 @@ class DMarketAPI {
     static async getMarketOffers(title, exterior = null, phase = null, treeFiltersExtra = null, limit = 100, floatPartValue = null, exactFullTitle = null) {
         const cleanTitle = title.replace(/^[★*]\s*/, '').trim();
 
-        if (floatPartValue && exactFullTitle) {
+        if (exactFullTitle) {
             const depthParams = new URLSearchParams({
                 gameId: "a8db",
                 title: exactFullTitle,
                 currency: "USD"
             });
             const depthFilters = [];
-            depthFilters.push(`floatPartValue[]=${floatPartValue}`);
+            if (floatPartValue) depthFilters.push(`floatPartValue[]=${floatPartValue}`);
             depthFilters.push("paintSeed[]=any");
             if (phase) depthFilters.push(`phase[]=${phase}`);
             

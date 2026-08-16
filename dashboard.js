@@ -1,5 +1,5 @@
 import { DMarketAPI, DMarketLogger } from './api/index.js';
-import { fetchAndAnalyzeAllOffers } from './tracker_service.js';
+import { fetchAndAnalyzeAllOffers, analyzeSingleOffer } from './tracker_service.js';
 
 // DMarket Float Tracker Standalone Dashboard Controller (Manifest V3 - Strict CSP Compliant)
 
@@ -180,7 +180,7 @@ function initEvents() {
                     if (!isNaN(price) && price > 0) {
                         saveItemPrice(offerId, price);
                     } else {
-                        showToast('Введите корректную цену выше $0.00', 'error', 3000);
+                        showToast('Please enter a valid price above $0.00', 'error', 3000);
                     }
                 }
                 return;
@@ -193,6 +193,35 @@ function initEvents() {
                 if (!isNaN(compPrice) && userOfferId) {
                     outbidCompetitor(userOfferId, compPrice);
                 }
+                return;
+            }
+
+            // Outbid with picker popup (multiple user offers)
+            const outbidPickBtn = e.target.closest('[data-action="outbid-pick"]');
+            if (outbidPickBtn) {
+                const compPrice = parseFloat(outbidPickBtn.dataset.compPrice);
+                if (!isNaN(compPrice)) {
+                    showOutbidPicker(compPrice);
+                }
+                return;
+            }
+
+            // Pick a specific offer from the outbid picker
+            const pickOfferBtn = e.target.closest('[data-action="pick-outbid-offer"]');
+            if (pickOfferBtn) {
+                const compPrice = parseFloat(pickOfferBtn.dataset.compPrice);
+                const userOfferId = pickOfferBtn.dataset.userOfferId;
+                if (!isNaN(compPrice) && userOfferId) {
+                    hideOutbidPicker();
+                    outbidCompetitor(userOfferId, compPrice);
+                }
+                return;
+            }
+
+            // Close the picker if clicking its backdrop
+            const pickerBackdrop = e.target.closest('.outbid-picker-backdrop');
+            if (pickerBackdrop && e.target === pickerBackdrop) {
+                hideOutbidPicker();
                 return;
             }
 
@@ -214,7 +243,7 @@ function initEvents() {
                     if (!isNaN(price) && price > 0) {
                         saveItemPrice(offerId, price);
                     } else {
-                        showToast('Введите корректную цену выше $0.00', 'error', 3000);
+                        showToast('Please enter a valid price above $0.00', 'error', 3000);
                     }
                 }
             }
@@ -615,11 +644,19 @@ async function saveItemPrice(offerId, explicitPrice = null) {
 
                 applyFiltersAndRender();
 
-                if (activeModalOfferId === offerId) {
+                if (activeModalOfferId === offerId || allItems.some(x => x.offer_id === offerId && x.title === item.title && x.wear_short === item.wear_short)) {
+                    const siblingItems = allItems.filter(x =>
+                        x.title === item.title && x.wear_short === item.wear_short
+                    );
                     const subEl = document.getElementById('modalSubtitle');
-                    if (subEl) subEl.textContent = `Float category: ${item.category_label} | Rank: ${item.rank_display}`;
+                    if (subEl) {
+                        const subText = siblingItems.length > 1
+                            ? `Float category: ${item.category_label} | ${siblingItems.length} of your offers in this range`
+                            : `Float category: ${item.category_label} | Rank: ${item.rank_display}`;
+                        subEl.textContent = subText;
+                    }
                     const bodyEl = document.getElementById('modalBody');
-                    if (bodyEl) renderCompetitorsTable(item, bodyEl);
+                    if (bodyEl) renderCompetitorsTable(item, bodyEl, siblingItems);
                 }
             }
         } else {
@@ -643,6 +680,12 @@ function openCompetitorsModal(offerId) {
     if (!item) return;
 
     activeModalOfferId = offerId;
+
+    // Find all sibling items: same title + same float category
+    const siblingItems = allItems.filter(x =>
+        x.title === item.title && x.wear_short === item.wear_short
+    );
+
     const modal = document.getElementById('competitorsModal');
     const titleEl = document.getElementById('modalTitle');
     const subEl = document.getElementById('modalSubtitle');
@@ -650,23 +693,53 @@ function openCompetitorsModal(offerId) {
     const bodyEl = document.getElementById('modalBody');
 
     if (titleEl) titleEl.textContent = item.title;
-    if (subEl) subEl.textContent = `Float category: ${item.category_label} | Rank: ${item.rank} of ${item.total_in_category}`;
+    const siblingCount = siblingItems.length;
+    const subText = siblingCount > 1
+        ? `Float category: ${item.category_label} | ${siblingCount} of your offers in this range`
+        : `Float category: ${item.category_label} | Rank: ${item.rank} of ${item.total_in_category}`;
+    if (subEl) subEl.textContent = subText;
     if (linkEl) {
         linkEl.href = getDMarketSearchUrl(item);
         linkEl.title = `Open skin page in category [${item.category_label}] on DMarket`;
     }
 
     if (bodyEl) {
-        renderCompetitorsTable(item, bodyEl);
+        renderCompetitorsTable(item, bodyEl, siblingItems);
     }
 
     if (modal) modal.classList.remove('hidden');
 }
 
-function renderCompetitorsTable(item, container) {
-    const competitors = item.competitors || [];
+function renderCompetitorsTable(item, container, siblingItems = []) {
+    // Collect all user offer IDs from siblings
+    const userOfferIds = new Set();
+    if (siblingItems.length > 0) {
+        siblingItems.forEach(s => userOfferIds.add(s.offer_id));
+    } else {
+        userOfferIds.add(item.offer_id);
+    }
 
-    if (competitors.length === 0) {
+    // Merge competitors from all siblings, dedup by offer_id
+    const seenIds = new Set();
+    let mergedCompetitors = [];
+
+    const allSiblings = siblingItems.length > 0 ? siblingItems : [item];
+    for (const sib of allSiblings) {
+        for (const c of (sib.competitors || [])) {
+            const cId = c.offer_id || ('anon-' + Math.random());
+            if (!seenIds.has(cId)) {
+                seenIds.add(cId);
+                // Mark as user offer if it belongs to any of our siblings
+                const isUserOffer = c.is_user_offer || userOfferIds.has(cId);
+                mergedCompetitors.push({ ...c, is_user_offer: isUserOffer });
+            }
+        }
+    }
+
+    // Sort by price ascending
+    mergedCompetitors.sort((a, b) => (a.price_usd || 0) - (b.price_usd || 0));
+
+    if (mergedCompetitors.length === 0) {
         container.innerHTML = `<div style="padding: 30px; text-align: center; color: var(--text-muted); font-size: 13px;">No active competitor offers in this float category</div>`;
         return;
     }
@@ -677,7 +750,7 @@ function renderCompetitorsTable(item, container) {
     const isFade = titleLow.includes('fade') && !isMarbleFade;
     const isCaseHardened = titleLow.includes('case hardened');
 
-    const hasAnySpecial = competitors.some(c => c.phase || c.fade_pct || c.tier) || item.phase || item.phase_display;
+    const hasAnySpecial = mergedCompetitors.some(c => c.phase || c.fade_pct || c.tier) || item.phase || item.phase_display;
 
     let showSpecialCol = false;
     let specialColTitle = 'PHASE';
@@ -699,8 +772,11 @@ function renderCompetitorsTable(item, container) {
         specialColTitle = 'PHASE / TIER';
     }
 
-    const rowsHtml = competitors.map((c, idx) => {
-        const isUser = c.is_user_offer || c.offer_id === item.offer_id;
+    // Find all user offer IDs that exist in the merged list for the outbid dropdown
+    const userOffersInList = mergedCompetitors.filter(c => c.is_user_offer);
+
+    const rowsHtml = mergedCompetitors.map((c, idx) => {
+        const isUser = c.is_user_offer;
         const rowClass = isUser ? 'user-row' : '';
         const rankNum = idx + 1;
         const rankBadge = isUser ? `<span class="tag-user-badge">Your offer</span>` : `<span style="font-family: var(--font-mono); font-weight: 700; color: var(--text-secondary);">${rankNum}</span>`;
@@ -740,18 +816,33 @@ function renderCompetitorsTable(item, container) {
                         <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> 
                         Listed by you
                     </span>
-                    <button class="btn-delist-lot" data-action="delist-lot" data-offer-id="${item.offer_id}" title="Delist this offer from DMarket">
+                    <button class="btn-delist-lot" data-action="delist-lot" data-offer-id="${c.offer_id}" title="Delist this offer from DMarket">
                         Delist
                     </button>
                 </div>
             `;
         } else {
             priceHtml = `<span class="font-mono text-price-bold" style="color: var(--green-text); font-size: 13px;">$${c.price_usd.toFixed(2)}</span>`;
-            actionHtml = `
-                <div class="comp-action-group">
-                    <button class="btn-outbid-lot" data-action="outbid" data-comp-price="${c.price_usd}" data-user-offer-id="${item.offer_id}" title="Lower your offer price by 1¢ below this offer (to $${Math.max(0.01, c.price_usd - 0.01).toFixed(2)})">
+
+            let outbidHtml = '';
+            if (userOffersInList.length > 1) {
+                outbidHtml = `
+                    <button class="btn-outbid-lot" data-action="outbid-pick" data-comp-price="${c.price_usd}" title="Choose which of your offers to outbid by 1¢ ($${Math.max(0.01, c.price_usd - 0.01).toFixed(2)})">
                         <span>Outbid</span>
                     </button>
+                `;
+            } else {
+                const targetOfferId = userOffersInList.length === 1 ? userOffersInList[0].offer_id : item.offer_id;
+                outbidHtml = `
+                    <button class="btn-outbid-lot" data-action="outbid" data-comp-price="${c.price_usd}" data-user-offer-id="${targetOfferId}" title="Lower your offer price by 1¢ below this offer (to $${Math.max(0.01, c.price_usd - 0.01).toFixed(2)})">
+                        <span>Outbid</span>
+                    </button>
+                `;
+            }
+
+            actionHtml = `
+                <div class="comp-action-group">
+                    ${outbidHtml}
                     <button class="btn-buy-lot" data-action="prompt-buy" data-offer-id="${c.offer_id}" data-title="${encodeURIComponent(item.title)}" data-price="${c.price_usd}" data-float="${floatStr}" data-seed="${seedStr}" title="Buy this competitor offer from DMarket">
                         <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
                         <span>Buy $${c.price_usd.toFixed(2)}</span>
@@ -823,13 +914,26 @@ async function refreshCurrentModalItem() {
 
     try {
         const rawOffer = { attributes: { title: item.title, id: item.offer_id, cs2: { float: item.float_val, paintSeed: item.paint_seed, phase: item.phase } }, offerId: item.offer_id, priceCents: Math.round(item.price_usd * 100) };
-        const updated = await analyzeSingleOffer(rawOffer);
+        
+        const baseTitle = item.title.replace(/\s*\([^)]+\)\s*$/, '').trim().toLowerCase();
+        const groupKey = baseTitle + "_" + item.wear_short;
+        const groupMaxFMap = { [groupKey]: item.cat_max };
+        
+        const updated = await analyzeSingleOffer(rawOffer, window.buyHistoryMap || {}, window.closedTrades || [], null, groupMaxFMap);
         if (updated) {
             Object.assign(item, updated);
+            const siblingItems = allItems.filter(x =>
+                x.title === item.title && x.wear_short === item.wear_short
+            );
             const subEl = document.getElementById('modalSubtitle');
-            if (subEl) subEl.textContent = `Float category: ${item.category_label} | Rank: ${item.rank_display}`;
+            if (subEl) {
+                const subText = siblingItems.length > 1
+                    ? `Float category: ${item.category_label} | ${siblingItems.length} of your offers in this range`
+                    : `Float category: ${item.category_label} | Rank: ${item.rank_display}`;
+                subEl.textContent = subText;
+            }
             const bodyEl = document.getElementById('modalBody');
-            if (bodyEl) renderCompetitorsTable(item, bodyEl);
+            if (bodyEl) renderCompetitorsTable(item, bodyEl, siblingItems);
             applyFiltersAndRender();
             showToast('Offers refreshed in real-time!', 'success', 2500);
         }
@@ -900,6 +1004,55 @@ async function executeBuyOffer() {
         if (execBtn) execBtn.disabled = false;
         if (execBtnText) execBtnText.textContent = 'Confirm and buy';
     }
+}
+function showOutbidPicker(compPrice) {
+    const item = allItems.find(x => x.offer_id === activeModalOfferId);
+    if (!item) return;
+
+    const siblingItems = allItems.filter(x =>
+        x.title === item.title && x.wear_short === item.wear_short
+    );
+
+    if (siblingItems.length <= 1) {
+        outbidCompetitor(item.offer_id, compPrice);
+        return;
+    }
+
+    const newPrice = Math.max(0.01, Math.round((compPrice - 0.01) * 100) / 100);
+
+    const buttonsHtml = siblingItems.map(s => {
+        const sFloat = (s.float_val !== null && s.float_val !== undefined) ? s.float_val.toFixed(4) : '?';
+        const sSeed = s.paint_seed || '?';
+        return `
+            <button class="outbid-picker-item" data-action="pick-outbid-offer" data-comp-price="${compPrice}" data-user-offer-id="${s.offer_id}">
+                <span class="font-mono" style="color: var(--green-text); font-weight: 700;">$${s.price_usd.toFixed(2)}</span>
+                <span style="color: var(--text-secondary); font-size: 11px;">Float: ${sFloat} | Seed: ${sSeed}</span>
+                <span style="color: var(--text-muted); font-size: 10px;">\u2192 $${newPrice.toFixed(2)}</span>
+            </button>
+        `;
+    }).join('');
+
+    hideOutbidPicker();
+
+    const pickerEl = document.createElement('div');
+    pickerEl.className = 'outbid-picker-backdrop';
+    pickerEl.innerHTML = `
+        <div class="outbid-picker-panel">
+            <div style="font-size: 13px; font-weight: 700; margin-bottom: 10px; color: var(--text-primary);">
+                Which offer to outbid to $${newPrice.toFixed(2)}?
+            </div>
+            <div class="outbid-picker-list">
+                ${buttonsHtml}
+            </div>
+            <button class="outbid-picker-cancel" onclick="document.querySelector('.outbid-picker-backdrop')?.remove()">Cancel</button>
+        </div>
+    `;
+
+    document.getElementById('modalBody')?.appendChild(pickerEl);
+}
+
+function hideOutbidPicker() {
+    document.querySelector('.outbid-picker-backdrop')?.remove();
 }
 
 function showToast(message, type = 'info', duration = 3000) {

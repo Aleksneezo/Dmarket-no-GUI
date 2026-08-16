@@ -4,6 +4,14 @@ import { DMarketAPI } from './api/endpoints.js';
 import { DMarketLogger } from './api/logger.js';
 
 // DMarket Float Tracker Core Analysis Service (Pure JS)
+//
+// ⚠️ RECENT UPDATES (v2.1):
+// 1. Custom Interactive Outbid Picker: When clicking "Outbid" with multiple identical items, a custom interactive modal popup appears instead of a standard dropdown, allowing visual selection of which item to update based on float, current price, and target price.
+// 2. Unified Float Grouping (MaxF Sync): Items of the same skin and exterior (e.g., all FT Driver Gloves) are visually grouped in the competitors modal. The script now pre-scans all identical items in the inventory and applies the highest subcategory upper bound (the worst float's tier limit) to the entire group. This ensures that e.g. an item with 0.18 float and an item with 0.23 float will both fetch competitors from 0.15 up to 0.24, competing in the exact same unified range.
+// 3. Depth API Parsing Fallback: The default DMarket offers API became strict about treeFilters and floatPartValue, causing "no competitors found" errors. The fallback logic was shifted to ALWAYS utilize the `exchange/v1/market/depth/v2` API when the exact skin name is known. This API is highly reliable and returns the full unfiltered list of items for local float parsing.
+//
+// ⚠️ CURRENT PARSING WARNING:
+// Due to recent DMarket API restrictions, certain explicit queries (like strict float bounds applied via URL parameters) might be rejected with `Unauthorized` or `Gone` errors. The extension now relies heavily on fetching broader lists (e.g., via the Depth API) and filtering the exact float boundaries (e.g., up to 0.24) locally in the client. If DMarket truncates the broad response size (e.g., limit=100) and relevant competitors are beyond that limit, some competitors might still be missed. Always verify high-value items.
 
 
 function isExactDMarketMatch(itemTitle, targetSkinName) {
@@ -90,7 +98,23 @@ function getPatternTierData(title, phase, paintSeed) {
     return { tier: null, index: -1 };
 }
 
-async function analyzeSingleOffer(rawOffer, buyHistoryMap = {}, closedTrades = [], abortSignal = null) {
+function extractFloatFromRawOffer(rawOffer) {
+    const cs2Data = rawOffer.cs2 || (rawOffer.extra && rawOffer.extra.cs2) || (rawOffer.attributes && rawOffer.attributes.cs2) || {};
+    const attrs = rawOffer.attributes || rawOffer.Attributes || {};
+    const extraData = rawOffer.extra || {};
+    let floatVal = null;
+    if (cs2Data.floatValue !== undefined && cs2Data.floatValue !== null && cs2Data.floatValue !== "") floatVal = parseFloat(cs2Data.floatValue);
+    else if (cs2Data.float !== undefined && cs2Data.float !== null) floatVal = parseFloat(cs2Data.float);
+    else if (extraData.floatValue !== undefined && extraData.floatValue !== null && extraData.floatValue !== "") floatVal = parseFloat(extraData.floatValue);
+    else if (extraData.float !== undefined && extraData.float !== null) floatVal = parseFloat(extraData.float);
+    else if (attrs.floatValue !== undefined && attrs.floatValue !== null) floatVal = parseFloat(attrs.floatValue);
+    else if (attrs.float !== undefined && attrs.float !== null) floatVal = parseFloat(attrs.float);
+    else if (rawOffer.floatValue !== undefined && rawOffer.floatValue !== null) floatVal = parseFloat(rawOffer.floatValue);
+    else if (rawOffer.float !== undefined && rawOffer.float !== null) floatVal = parseFloat(rawOffer.float);
+    return floatVal;
+}
+
+async function analyzeSingleOffer(rawOffer, buyHistoryMap = {}, closedTrades = [], abortSignal = null, groupMaxFMap = {}) {
     if (abortSignal && abortSignal.aborted) return null;
 
     const cs2Data = rawOffer.cs2 || (rawOffer.extra && rawOffer.extra.cs2) || (rawOffer.attributes && rawOffer.attributes.cs2) || {};
@@ -168,27 +192,17 @@ async function analyzeSingleOffer(rawOffer, buyHistoryMap = {}, closedTrades = [
         }
     }
 
-    // Float parsing
-    let floatVal = null;
-    if (cs2Data.floatValue !== undefined && cs2Data.floatValue !== null && cs2Data.floatValue !== "") {
-        floatVal = parseFloat(cs2Data.floatValue);
-    } else if (cs2Data.float !== undefined && cs2Data.float !== null) {
-        floatVal = parseFloat(cs2Data.float);
-    } else if (extraData.floatValue !== undefined && extraData.floatValue !== null && extraData.floatValue !== "") {
-        floatVal = parseFloat(extraData.floatValue);
-    } else if (extraData.float !== undefined && extraData.float !== null) {
-        floatVal = parseFloat(extraData.float);
-    } else if (attrs.floatValue !== undefined && attrs.floatValue !== null) {
-        floatVal = parseFloat(attrs.floatValue);
-    } else if (attrs.float !== undefined && attrs.float !== null) {
-        floatVal = parseFloat(attrs.float);
-    } else if (rawOffer.floatValue !== undefined && rawOffer.floatValue !== null) {
-        floatVal = parseFloat(rawOffer.floatValue);
-    } else if (rawOffer.float !== undefined && rawOffer.float !== null) {
-        floatVal = parseFloat(rawOffer.float);
-    }
+    let floatVal = extractFloatFromRawOffer(rawOffer);
 
-    const { wearShort, catLabel, minF, maxF, qualityMin, dmarket_exterior, floatPartValue } = getFloatCategory(fullTitle, floatVal);
+    let { wearShort, catLabel, minF, maxF, qualityMin, dmarket_exterior, floatPartValue } = getFloatCategory(fullTitle, floatVal);
+    
+    // Override maxF if group max is provided (to unite items of same wear)
+    const baseTitleForGroup = fullTitle.replace(/\s*\([^)]+\)\s*$/, '').trim().toLowerCase();
+    const groupKey = baseTitleForGroup + "_" + wearShort;
+    if (groupMaxFMap[groupKey] !== undefined) {
+        maxF = groupMaxFMap[groupKey];
+        catLabel = `${minF.toFixed(2)} - ${maxF.toFixed(2)}`;
+    }
     const paintSeed = cs2Data.paintSeed || extraData.paintSeed || attrs.paintSeed || rawOffer.paintSeed || null;
 
     let fadePct = null;
@@ -209,7 +223,7 @@ async function analyzeSingleOffer(rawOffer, buyHistoryMap = {}, closedTrades = [
         extraTree = "categoryPath[]=csgo/weapons/stattrak";
     }
 
-    let marketData = await DMarketAPI.getMarketOffers(searchTitle, dmarket_exterior, itemPhase, extraTree, 100, floatPartValue, fullTitle);
+    let marketData = await DMarketAPI.getMarketOffers(searchTitle, dmarket_exterior, itemPhase, extraTree, 100, null, fullTitle);
     let marketOffers = [];
     if (marketData) {
         if (Array.isArray(marketData.objects)) marketOffers = marketData.objects;
@@ -426,6 +440,20 @@ async function fetchAndAnalyzeAllOffers(progressCb = null, abortSignal = null) {
     const total = rawOffers.length;
     const analyzedItems = [];
 
+    // Pre-calculate maximum maxF for each group (title + wear)
+    const groupMaxFMap = {};
+    for (let i = 0; i < total; i++) {
+        const offer = rawOffers[i];
+        const title = offer.title || (offer.attributes && offer.attributes.title) || offer.name || "Unknown Skin";
+        const floatVal = extractFloatFromRawOffer(offer);
+        const { wearShort, maxF } = getFloatCategory(title, floatVal);
+        const baseTitle = title.replace(/\s*\([^)]+\)\s*$/, '').trim().toLowerCase();
+        const key = baseTitle + "_" + wearShort;
+        if (groupMaxFMap[key] === undefined || maxF > groupMaxFMap[key]) {
+            groupMaxFMap[key] = maxF;
+        }
+    }
+
     for (let i = 0; i < total; i++) {
         if (abortSignal && abortSignal.aborted) break;
         const offer = rawOffers[i];
@@ -433,7 +461,7 @@ async function fetchAndAnalyzeAllOffers(progressCb = null, abortSignal = null) {
         if (progressCb) progressCb(i + 1, total, `Analyzing ${i + 1}/${total}: ${title}`);
 
         try {
-            const item = await analyzeSingleOffer(offer, buyHistoryMap, closedTrades, abortSignal);
+            const item = await analyzeSingleOffer(offer, buyHistoryMap, closedTrades, abortSignal, groupMaxFMap);
             if (item) analyzedItems.push(item);
         } catch (e) {
             console.error(`Analysis error for ${title}:`, e);
@@ -443,4 +471,4 @@ async function fetchAndAnalyzeAllOffers(progressCb = null, abortSignal = null) {
     return analyzedItems;
 }
 
-export { fetchAndAnalyzeAllOffers, fetchAndAnalyzeAllOffers as scanAllUserOffers };
+export { fetchAndAnalyzeAllOffers, fetchAndAnalyzeAllOffers as scanAllUserOffers, analyzeSingleOffer };
