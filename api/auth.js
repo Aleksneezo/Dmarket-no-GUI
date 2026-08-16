@@ -19,7 +19,7 @@ export function decodeAndValidateJwt(token) {
     }
 }
 
-// Глобальные состояния, которые раньше были в классе
+// Global states that were previously in the class
 let _bgRefreshPromise = null;
 let _lastBgRefresh = 0;
 
@@ -27,7 +27,7 @@ export async function getDMarketAuth() {
     let jwt = null;
     let cookieStr = '';
 
-    // 1. Проверяем chrome.storage.local
+    // 1. Check chrome.storage.local
     if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
         try {
             const st = await new Promise((resolve) => {
@@ -39,7 +39,7 @@ export async function getDMarketAuth() {
                 if (valRes && valRes.valid) {
                     jwt = cand;
                 } else if (valRes && valRes.expired) {
-                    DMarketLogger.logDebug(`[Auth] Сохраненный JWT токен истек (${valRes.expDate.toLocaleTimeString()}), обновляем...`);
+                    DMarketLogger.logDebug(`[Auth] Saved JWT token expired (), refreshing...`);
                     chrome.storage.local.remove(['dmJwt', 'dmToken', 'dmUserToken']);
                 }
             }
@@ -47,7 +47,7 @@ export async function getDMarketAuth() {
         } catch (e) {}
     }
 
-    // 2. Если токена нет, извлекаем напрямую из открытой вкладки dmarket.com
+    // 2. If no token, extract directly from open dmarket.com tab
     if (!jwt && typeof chrome !== 'undefined' && chrome.tabs && chrome.scripting) {
         try {
             const allTabs = await new Promise(resolve => chrome.tabs.query({}, res => resolve(res || [])));
@@ -59,7 +59,7 @@ export async function getDMarketAuth() {
                     chrome.scripting.executeScript({
                         target: { tabId: tabId },
                         func: () => {
-                            // 1. Проверяем Redux store
+                            // 1. Check Redux store
                             try {
                                 const root = localStorage.getItem('persist:root');
                                 if (root) {
@@ -78,7 +78,7 @@ export async function getDMarketAuth() {
                                 }
                             } catch (e) {}
 
-                            // 2. Проверяем ключи localStorage
+                            // 2. Check localStorage keys
                             for (const k of ['token', 'dmarket-jwt', 'jwt', 'auth_token', 'accessToken', 'idToken']) {
                                 const v = localStorage.getItem(k) || sessionStorage.getItem(k);
                                 if (v && typeof v === 'string' && v.length > 20 && v.includes('.')) {
@@ -86,7 +86,7 @@ export async function getDMarketAuth() {
                                 }
                             }
 
-                            // 3. Сканируем все ключи
+                            // 3. Scan all keys
                             for (let i = 0; i < localStorage.length; i++) {
                                 const v = localStorage.getItem(localStorage.key(i));
                                 if (v && typeof v === 'string') {
@@ -105,7 +105,7 @@ export async function getDMarketAuth() {
                     if (vRes && vRes.valid) {
                         jwt = extracted;
                         chrome.storage.local.set({ dmJwt: jwt, dmUserToken: jwt });
-                        DMarketLogger.logDebug(`[Auth] Свежий JWT токен успешно извлечен из вкладки dmarket.com!`);
+                        DMarketLogger.logDebug(`[Auth] Fresh JWT token successfully extracted from dmarket.com tab!`);
                     }
                 }
             }
@@ -114,7 +114,7 @@ export async function getDMarketAuth() {
         }
     }
 
-    // 3. Проверяем куки браузера
+    // 3. Check browser cookies
     if (typeof chrome !== 'undefined' && chrome.cookies) {
         try {
             const cookieList = await new Promise((resolve) => {
@@ -141,10 +141,10 @@ export async function getDMarketAuth() {
             if (parts.length > 0 && !cookieStr) cookieStr = parts.join('; ');
         } catch (e) {}
     }
-    // 4. Если токена все еще нет, пытаемся открыть фоновую вкладку для обновления (раз в 2 минуты)
+    // 4. If token still missing, try opening background tab to refresh (every 2 mins)
     if (!jwt && typeof chrome !== 'undefined' && chrome.tabs && chrome.scripting) {
         const now = Date.now();
-        // Блокировка от одновременных вызовов
+        // Block concurrent calls
         if (_bgRefreshPromise) {
             await _bgRefreshPromise;
             const st = await new Promise((resolve) => chrome.storage.local.get(['dmJwt'], res => resolve(res || {})));
@@ -152,12 +152,12 @@ export async function getDMarketAuth() {
         } else if (!_lastBgRefresh || (now - _lastBgRefresh > 120000)) {
             _bgRefreshPromise = (async () => {
                 _lastBgRefresh = now;
-                DMarketLogger.logDebug("[Auth] Токен не найден или истек. Открываем фоновую вкладку DMarket для обновления сессии...");
+                DMarketLogger.logDebug("[Auth] Token not found or expired. Opening background DMarket tab to refresh session...");
                 
                 try {
                     const bgTab = await new Promise(resolve => chrome.tabs.create({ url: 'https://dmarket.com', active: false }, t => resolve(t)));
                     
-                    // Ждем 6 секунд загрузки страницы и работы JS сайта
+                    // Wait 6 seconds for page load and site JS to run
                     await new Promise(r => setTimeout(r, 6000));
                     
                     let results = null;
@@ -213,15 +213,15 @@ export async function getDMarketAuth() {
                         if (vRes && vRes.valid) {
                             jwt = extracted;
                             chrome.storage.local.set({ dmJwt: jwt, dmUserToken: jwt });
-                            DMarketLogger.logDebug("[Auth] Успешно извлечен свежий токен из фоновой вкладки!");
+                            DMarketLogger.logDebug("[Auth] Successfully extracted fresh token from background tab!");
                         } else {
-                            DMarketLogger.logDebug("[Auth] Извлеченный из фоновой вкладки токен недействителен.");
+                            DMarketLogger.logDebug("[Auth] Token extracted from background tab is invalid.");
                         }
                     } else {
-                        DMarketLogger.logDebug("[Auth] Не удалось получить токен из фоновой вкладки (пользователь не авторизован).");
+                        DMarketLogger.logDebug("[Auth] Failed to get token from background tab (user unauthorized).");
                     }
                 } catch (e) {
-                    DMarketLogger.logDebug("[Auth] Ошибка работы с фоновой вкладкой: " + e.message);
+                    DMarketLogger.logDebug("[Auth] Error working with background tab: " + e.message);
                 }
             })();
             await _bgRefreshPromise;

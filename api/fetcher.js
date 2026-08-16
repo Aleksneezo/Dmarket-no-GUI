@@ -108,13 +108,13 @@ export async function fetchWithAuth(url, options = {}) {
     const method = options.method || 'GET';
     const fullUrl = url.startsWith('http') ? url : `https://api.dmarket.com${url}`;
 
-    // 1. Выполняем нативный запрос прямо через открытую вкладку dmarket.com
+    // 1. Perform native request directly via open dmarket.com tab
     if (!_tabBroken) {
         const timeoutPromise = new Promise(resolve => setTimeout(() => resolve('TIMEOUT'), 4000));
         const inTabRes = await Promise.race([fetchViaDMarketTab(fullUrl, options), timeoutPromise]);
         
         if (inTabRes === 'TIMEOUT') {
-            DMarketLogger.logDebug(`[fetchViaTab] Ошибка: таймаут скрипта, вкладка dmarket.com недоступна.`);
+            DMarketLogger.logDebug(`[fetchViaTab] Error: script timeout, dmarket.com tab is unavailable.`);
             _tabBroken = true;
         } else if (inTabRes && inTabRes.status > 0) {
             const logMsg = `[fetchViaTab] ${method} ${fullUrl.split('?')[0]} -> HTTP ${inTabRes.status}`;
@@ -125,7 +125,7 @@ export async function fetchWithAuth(url, options = {}) {
         }
     }
 
-    // 2. Фоллбек: прямой fetch из контекста расширения
+    // 2. Fallback: direct fetch from extension context
     const auth = await getDMarketAuth();
     const headers = {
         'Accept': 'application/json, text/plain, */*',
@@ -153,18 +153,18 @@ export async function fetchWithAuth(url, options = {}) {
         let response = await fetch(fullUrl, config);
         let text = await response.text();
 
-        // Если получаем 401 с токеном, вероятно токен отозван сервером (хоть и не истек локально)
+        // If 401 with token received, token likely revoked by server (even if not expired locally)
         if (response.status === 401 && auth.jwt) {
-            DMarketLogger.logDebug(`[fetchDirect] 401 Unauthorized. Токен устарел или отозван сервером. Удаляем...`);
+            DMarketLogger.logDebug(`[fetchDirect] 401 Unauthorized. Token expired or revoked by server. Removing...`);
             if (typeof chrome !== 'undefined' && chrome.storage) {
                 chrome.storage.local.remove(['dmJwt', 'dmToken', 'dmUserToken']);
             }
-            // Делаем retry без JWT (fallback на cookies, которые браузер шлет сам)
+            // Retry without JWT (fallback to cookies sent by browser)
             const retryConfig = { ...config };
             delete retryConfig.headers['Authorization'];
             response = await fetch(fullUrl, retryConfig);
             text = await response.text();
-            DMarketLogger.logDebug(`[fetchDirect] Retry без JWT -> HTTP ${response.status}`);
+            DMarketLogger.logDebug(`[fetchDirect] Retry without JWT -> HTTP `);
         }
 
         let data = null;
@@ -174,7 +174,7 @@ export async function fetchWithAuth(url, options = {}) {
             data = text;
         }
 
-        const logMsg = `[fetchDirect] ${method} ${fullUrl.split('?')[0]} -> HTTP ${response.status} (JWT: ${auth.jwt ? 'OK' : 'НЕТ'})`;
+        const logMsg = `[fetchDirect] ${method} ${fullUrl.split('?')[0]} -> HTTP ${response.status} (JWT: ${auth.jwt ? 'OK' : 'NO'})`;
         DMarketLogger.logDebug(logMsg, response.status !== 200 ? { status: response.status, text: text.slice(0, 200) } : null);
 
         return {

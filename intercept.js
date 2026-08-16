@@ -1,4 +1,4 @@
-// Interceptor injected in world: "MAIN" at document_start (архитектура cyberbebebe)
+// Interceptor injected in world: "MAIN" at document_start (cyberbebebe architecture)
 
 (function() {
     console.log("[DMarket Interceptor] Network interceptor active in MAIN world.");
@@ -84,7 +84,7 @@
         return originalSend.apply(this, args);
     };
 
-    // Активный сбор данных пользователя прямо из MAIN world
+    // Active user data collection directly from MAIN world
     async function triggerUserDataFetch() {
         const endpoints = [
             "https://api.dmarket.com/marketplace-api/v2/user/offers?game_id=a8db&limit=100&status=OfferStatusDefault",

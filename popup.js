@@ -24,24 +24,24 @@ async function checkDMarketSession() {
             const profile = await resp.json();
             if (statusDot) statusDot.className = "dot active";
             if (statusText) {
-                statusText.textContent = "Активна";
+                statusText.textContent = "Active";
                 statusText.style.color = "#34d399";
             }
             if (userText) {
-                userText.textContent = profile.username || profile.email || "Авторизован";
+                userText.textContent = profile.username || profile.email || "Authorized";
             }
         } else {
             if (statusDot) statusDot.className = "dot";
             if (statusText) {
-                statusText.textContent = "Не авторизован";
+                statusText.textContent = "Unauthorized";
                 statusText.style.color = "#fb7185";
             }
-            if (userText) userText.textContent = "Войдите на dmarket.com";
+            if (userText) userText.textContent = "Login on dmarket.com";
         }
     } catch (e) {
         if (statusDot) statusDot.className = "dot";
         if (statusText) {
-            statusText.textContent = "Ошибка сети";
+            statusText.textContent = "Network Error";
             statusText.style.color = "#fb7185";
         }
     }

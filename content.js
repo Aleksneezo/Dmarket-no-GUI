@@ -1,4 +1,4 @@
-// Content script running in world: "ISOLATED" (архитектура cyberbebebe)
+// Content script running in world: "ISOLATED" (cyberbebebe architecture)
 
 (function () {
     console.log("[DMarket Content] Bridge active in ISOLATED world.");
@@ -55,14 +55,14 @@
         });
     }
 
-    // Слушатель перехваченных данных из MAIN world (intercept.js)
+    // Listener for intercepted data from MAIN world (intercept.js)
     window.addEventListener('message', (event) => {
         if (event.source !== window || !event.data || event.data.source !== 'DMARKET_INTERCEPT') return;
 
         const { url, data } = event.data;
         if (!data) return;
 
-        // Поиск предметов в полученных данных
+        // Search for items in received data
         const candidateItems = [];
 
         function scan(obj, depth = 0) {
@@ -88,14 +88,14 @@
             saveItems(candidateItems);
         }
 
-        // Токен авторизации Bearer JWT
+        // Bearer JWT authorization token
         if (url === 'AUTH_TOKEN' && data && data.token) {
             console.log("[DMarket Content] Captured active Bearer JWT token from web session");
             chrome.storage.local.set({ dmJwt: data.token, dmUserToken: data.token });
             return;
         }
 
-        // Профиль и баланс
+        // Profile and balance
         if (url.includes('/account/v1/user') || (data.username && (data.id || data.userId))) {
             chrome.storage.local.set({ dmUserProfile: data });
         }
@@ -104,7 +104,7 @@
         }
     });
 
-    // Плавающая кнопка
+    // Floating button
     function injectFloatingButton() {
         if (document.getElementById("dm-tracker-floating-btn")) return;
 
@@ -161,7 +161,7 @@
         document.body.appendChild(btn);
     }
 
-    // Слушатель запросов от дашборда на получение токена
+    // Listener for dashboard requests to get token
     if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
         chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             if (request.action === 'GET_AUTH_TOKEN' || request.action === 'SYNC_SESSION') {

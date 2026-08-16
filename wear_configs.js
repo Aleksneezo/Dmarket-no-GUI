@@ -97,6 +97,7 @@ function getFloatCategory(titleOrWear, floatVal) {
         maxF: selectedUpper,
         min: selectedLower,
         max: selectedUpper,
+        qualityMin: minWear,
         floatPartValue: floatPartValue
     };
 }

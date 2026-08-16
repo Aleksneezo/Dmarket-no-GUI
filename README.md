@@ -1,35 +1,35 @@
 # 🧩 DMarket Float & Profit Tracker — Standalone Browser Extension
 
-Полностью автономное расширение для браузера (Chrome / Brave / Edge / Opera) по аналогии с **[cyberbebebe/cs2-profit-checker](https://github.com/cyberbebebe/cs2-profit-checker)**.
+Fully autonomous browser extension (Chrome / Brave / Edge / Opera) inspired by **[cyberbebebe/cs2-profit-checker](https://github.com/cyberbebebe/cs2-profit-checker)**.
 
-> **ВАЖНО:** Для работы расширения **НЕ НУЖЕН Python, Flask или запуск каких-либо скриптов**. Всё работает 100% локально внутри вашего браузера!
-
----
-
-## 🚀 Установка за 3 простых шага:
-
-### 1. Откройте страницу расширений в браузере:
-- В **Google Chrome / Brave / Opera**: вставьте в адресную строку `chrome://extensions/` (или `brave://extensions/`, `opera://extensions/`).
-- В **Microsoft Edge**: вставьте в адресную строку `edge://extensions/`.
-
-### 2. Включите «Режим разработчика» (Developer mode):
-- Переключатель находится в **правом верхнем углу** страницы.
-
-### 3. Загрузите папку расширения:
-1. Нажмите кнопку **«Загрузить распакованное расширение»** (*Load unpacked* в левом верхнем углу).
-2. Выберите папку проекта:
-   ```
-   d:\code\CS\dm-tracker2\dmarket no gui v2\extension
-   ```
-3. Готово! Расширение **«DMarket Float & Profit Tracker»** появится на панели браузера.
+> **IMPORTANT:** This extension **DOES NOT REQUIRE Python, Flask, or running any scripts**. Everything works 100% locally inside your browser!
 
 ---
 
-## 🎯 Как пользоваться:
-1. Откройте [dmarket.com](https://dmarket.com) и войдите в свой аккаунт.
-2. Нажмите на иконку расширения на панели браузера и нажмите **«🚀 Открыть Dashboard Трекера»** (или кликните плавающую кнопку **«🎯 Float Tracker»** в правом нижнем углу на сайте DMarket).
-3. В открывшейся вкладке нажмите **«Сканировать лоты»**:
-   - Автоматически загрузятся все ваши выставленные лоты.
-   - Определятся точные позиции (#1, #2, #3...) в поддиапазонах флоата (например, 0.15–0.18, 0.15–0.21) с учетом фаз Doppler.
-   - Рассчитается ожидаемый P&L с учетом 2% комиссии DMarket.
-   - Доступно изменение цен в 1 клик и выкуп конкурентов прямо из браузера!
+## 🚀 Installation in 3 easy steps:
+
+### 1. Open your browser's extensions page:
+- In **Google Chrome / Brave / Opera**: Paste `chrome://extensions/` (or `brave://extensions/`, `opera://extensions/`) into your address bar.
+- In **Microsoft Edge**: Paste `edge://extensions/` into your address bar.
+
+### 2. Enable "Developer mode":
+- Toggle the switch in the **top right corner** of the page.
+
+### 3. Load the extension folder:
+1. Click the **"Load unpacked"** button (top left corner).
+2. Select the project folder:
+   ```
+   Dmarket-no-GUI
+   ```
+3. Done! The **"DMarket Float & Profit Tracker"** extension will appear in your browser's toolbar.
+
+---
+
+## 🎯 How to use:
+1. Open [dmarket.com](https://dmarket.com) and log in to your account.
+2. Click the extension icon in your toolbar and select **"🚀 Open Tracker Dashboard"** (or click the floating **"🎯 Float Tracker"** button in the bottom right corner of the DMarket website).
+3. In the new tab that opens, click **"Scan Offers"**:
+   - All your listed items will automatically be loaded.
+   - Exact ranks (#1, #2, #3...) will be calculated for specific float subranges (e.g., 0.15–0.18, 0.15–0.21), taking Doppler phases into account.
+   - Expected P&L will be calculated factoring in DMarket's 2% commission.
+   - Features include 1-click price updating and competitor buyouts straight from your browser!

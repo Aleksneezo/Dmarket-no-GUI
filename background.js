@@ -1,12 +1,12 @@
-// Background Service Worker для DMarket Float Tracker (по архитектуре cyberbebebe)
+// Background Service Worker for DMarket Float Tracker (cyberbebebe architecture)
 
-// При клике на иконку расширения — открываем дашборд в новой вкладке
+// On extension icon click — open dashboard in a new tab
 chrome.action.onClicked.addListener((tab) => {
     const dashboardUrl = chrome.runtime.getURL("dashboard.html");
     chrome.tabs.create({ url: dashboardUrl });
 });
 
-// Слушатель сообщений от контентного скрипта
+// Content script message listener
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "OPEN_DASHBOARD") {
         const dashboardUrl = chrome.runtime.getURL("dashboard.html");

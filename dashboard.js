@@ -80,7 +80,7 @@ function initEvents() {
                 if (logsBox) {
                     const logs = DMarketLogger.getLogs() || [];
                     if (logs.length === 0) {
-                        logsBox.textContent = 'Логи пока пусты. Нажмите «Сканировать лоты» или обновите токен.';
+                        logsBox.textContent = 'Logs are empty. Click "Scan Offers" or refresh the token.';
                     } else {
                         logsBox.innerHTML = logs.map(l => `<span style="color:#5c6370;">${l.time}</span> ${l.msg} ${l.data ? '\n' + JSON.stringify(l.data, null, 2) : ''}`).join('\n\n');
                     }
@@ -133,7 +133,7 @@ function initEvents() {
         });
     }
 
-    // Делегирование событий клика для таблицы лотов (без inline onclick)
+    // Event delegation for items table (no inline onclick)
     const itemsContainer = document.getElementById('itemsContainer');
     if (itemsContainer) {
         itemsContainer.addEventListener('click', (e) => {
@@ -156,7 +156,7 @@ function initEvents() {
         });
     }
 
-    // Делегирование событий клика для модального окна конкурентов
+    // Event delegation for competitors modal
     const modalBody = document.getElementById('modalBody');
     if (modalBody) {
         modalBody.addEventListener('click', (e) => {
@@ -239,20 +239,20 @@ async function checkSession() {
             }
             text.textContent = `${username}${balStr}`;
             badge.style.borderColor = 'var(--green-border)';
-            badge.title = 'Авторизован через сессию браузера';
+            badge.title = 'Authorized via browser session';
 
             if (allItems.length === 0 && !isScanning) {
                 startScan();
             }
         } else {
             dot.className = 'dot';
-            text.textContent = 'Требуется обновить dmarket.com';
+            text.textContent = 'Refresh dmarket.com';
             badge.style.borderColor = 'var(--red-border)';
-            badge.title = 'Откройте или обновите (F5) страницу dmarket.com для передачи свежего токена';
+            badge.title = 'Open or refresh (F5) dmarket.com to transfer a fresh token';
         }
     } catch (e) {
         dot.className = 'dot';
-        text.textContent = 'Ошибка проверки сессии';
+        text.textContent = 'Session check error';
     }
 }
 
@@ -271,10 +271,10 @@ async function startScan() {
     const tableWrap = document.getElementById('itemsListSection') || document.getElementById('tableWrap');
 
     if (scanBtn) scanBtn.disabled = true;
-    if (scanBtnText) scanBtnText.textContent = 'Сканирование...';
+    if (scanBtnText) scanBtnText.textContent = 'Scanning...';
     if (progressBanner) progressBanner.classList.remove('hidden');
     if (progressBar) progressBar.style.width = '5%';
-    if (progressText) progressText.textContent = 'Подключение к сессии DMarket...';
+    if (progressText) progressText.textContent = 'Connecting to DMarket session...';
 
     try {
         const items = await fetchAndAnalyzeAllOffers(
@@ -300,21 +300,21 @@ async function startScan() {
 
         applyFiltersAndRender();
         if (allItems.length > 0) {
-            showToast(`Сканирование завершено! Проанализировано предметов: ${allItems.length}`, 'success', 3500);
+            showToast(`Scan completed! Analyzed items: ${allItems.length}`, 'success', 3500);
         } else {
-            showToast('Лоты не найдены. Нажмите «Журнал API» для подробностей.', 'info', 4000);
+            showToast('No offers found. Click "API Log" for details.', 'info', 4000);
         }
 
     } catch (err) {
         if (err.name === 'AbortError') {
-            showToast('Сканирование остановлено пользователем', 'info', 3000);
+            showToast('Scan stopped by user', 'info', 3000);
         } else {
-            showToast('Ошибка сканирования: ' + err.message, 'error', 4500);
+            showToast('Scan error: ' + err.message, 'error', 4500);
         }
     } finally {
         isScanning = false;
         if (scanBtn) scanBtn.disabled = false;
-        if (scanBtnText) scanBtnText.textContent = 'Сканировать лоты';
+        if (scanBtnText) scanBtnText.textContent = 'Scan Offers';
         if (progressBanner) progressBanner.classList.add('hidden');
         if (progressBar) progressBar.style.width = '0%';
     }
@@ -457,20 +457,20 @@ function renderItems(items) {
     if (!container) return;
 
     if (items.length === 0) {
-        container.innerHTML = `<div style="padding: 30px; text-align: center; color: var(--text-secondary);">Ничего не найдено по выбранным фильтрам</div>`;
+        container.innerHTML = `<div style="padding: 30px; text-align: center; color: var(--text-secondary);">No items found for the selected filters</div>`;
         return;
     }
 
     container.innerHTML = items.map(item => {
         const rankClass = item.rank === 1 ? 'is-rank-1' : (item.rank <= 3 ? 'is-rank-top3' : 'is-rank-other');
         const rankBadgeClass = item.rank === 1 ? 'badge-rank-1' : (item.rank <= 3 ? 'badge-rank-top3' : 'badge-rank-other');
-        const rankText = `${item.rank} из ${item.total_in_category}`;
+        const rankText = `${item.rank} of ${item.total_in_category}`;
 
         let diffHtml = '';
         if (item.rank === 1) {
-            diffHtml = `<span class="price-diff-tag diff-cheapest">Мин. цена (#1)</span>`;
+            diffHtml = `<span class="price-diff-tag diff-cheapest">Min. price (#1)</span>`;
         } else if (item.price_diff_usd > 0) {
-            diffHtml = `<span class="price-diff-tag diff-over">+${item.price_diff_usd.toFixed(2)}$ к #1 (+${item.price_diff_pct}%)</span>`;
+            diffHtml = `<span class="price-diff-tag diff-over">+${item.price_diff_usd.toFixed(2)}$ to #1 (+${item.price_diff_pct}%)</span>`;
         }
 
         let profitHtml = '';
@@ -520,22 +520,22 @@ function renderItems(items) {
                         ${profitHtml}
                     </div>
                     <div class="price-sub">
-                        <span>Мин: ${item.lowest_cat_price_str}</span>
+                        <span>Min: ${item.lowest_cat_price_str}</span>
                         ${diffHtml}
                     </div>
                 </div>
 
                 <div class="col-actions">
                     ${(item.rank > 1 && item.lowest_cat_price > 0) ? `
-                        <button class="btn-quick-outbid" data-action="quick-outbid" data-offer-id="${item.offer_id}" data-lowest-price="${item.lowest_cat_price}" title="Снизить цену до $${Math.max(0.01, item.lowest_cat_price - 0.01).toFixed(2)} (на $0.01 ниже #1)">
+                        <button class="btn-quick-outbid" data-action="quick-outbid" data-offer-id="${item.offer_id}" data-lowest-price="${item.lowest_cat_price}" title="Reduce price to $${Math.max(0.01, item.lowest_cat_price - 0.01).toFixed(2)} ($0.01 below #1)">
                             Outbid #1 ($${Math.max(0.01, item.lowest_cat_price - 0.01).toFixed(2)})
                         </button>
                     ` : ''}
-                    <button class="btn-competitors" data-action="open-competitors" data-offer-id="${item.offer_id}" title="Посмотреть конкурентов">
+                    <button class="btn-competitors" data-action="open-competitors" data-offer-id="${item.offer_id}" title="View competitors">
                         <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                        <span>Листинги (${item.total_in_category})</span>
+                        <span>Listings (${item.total_in_category})</span>
                     </button>
-                    <a href="${marketUrl}" target="_blank" rel="noopener noreferrer" class="btn-dmarket" title="Открыть категорию на DMarket">
+                    <a href="${marketUrl}" target="_blank" rel="noopener noreferrer" class="btn-dmarket" title="Open category on DMarket">
                         <span>DMarket</span>
                         <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                     </a>
@@ -558,7 +558,7 @@ async function saveItemPrice(offerId, explicitPrice = null) {
     }
 
     if (isNaN(newPrice) || newPrice <= 0) {
-        showToast('Введите корректную цену выше $0.00', 'error', 3000);
+        showToast('Enter a valid price above $0.00', 'error', 3000);
         return;
     }
 
@@ -575,7 +575,7 @@ async function saveItemPrice(offerId, explicitPrice = null) {
     try {
         const res = await DMarketAPI.editOfferPrice(offerId, newPrice, altIds);
         if (res.success) {
-            showToast(`Цена успешно обновлена на $${newPrice.toFixed(2)}!`, 'success', 3500);
+            showToast(`Price successfully updated to $${newPrice.toFixed(2)}!`, 'success', 3500);
 
             const item = allItems.find(x => x.offer_id === offerId);
             if (item) {
@@ -604,7 +604,7 @@ async function saveItemPrice(offerId, explicitPrice = null) {
                         }
                     }
                     item.rank = userRank;
-                    item.rank_display = `#${userRank} из ${item.total_in_category}`;
+                    item.rank_display = `#${userRank} of ${item.total_in_category}`;
                     item.is_best_price = (userRank === 1);
                     const lowestPrice = item.competitors.length > 0 ? item.competitors[0].price_usd : newPrice;
                     item.lowest_cat_price = lowestPrice;
@@ -617,16 +617,16 @@ async function saveItemPrice(offerId, explicitPrice = null) {
 
                 if (activeModalOfferId === offerId) {
                     const subEl = document.getElementById('modalSubtitle');
-                    if (subEl) subEl.textContent = `Категория флоата: ${item.category_label} | Позиция: ${item.rank_display}`;
+                    if (subEl) subEl.textContent = `Float category: ${item.category_label} | Rank: ${item.rank_display}`;
                     const bodyEl = document.getElementById('modalBody');
                     if (bodyEl) renderCompetitorsTable(item, bodyEl);
                 }
             }
         } else {
-            showToast(`Ошибка DMarket: ${res.error || 'Не удалось обновить цену'}`, 'error', 4000);
+            showToast(`DMarket error: ${res.error || 'Failed to update price'}`, 'error', 4000);
         }
     } catch (e) {
-        showToast(`Ошибка обновления: ${e.message}`, 'error', 4000);
+        showToast(`Update error: ${e.message}`, 'error', 4000);
     } finally {
         if (input) input.disabled = false;
     }
@@ -634,7 +634,7 @@ async function saveItemPrice(offerId, explicitPrice = null) {
 
 function outbidCompetitor(userOfferId, compPrice) {
     const newPrice = Math.max(0.01, Math.round((compPrice - 0.01) * 100) / 100);
-    showToast(`Перебиваем цену конкурента на 1¢: $${newPrice.toFixed(2)}...`, 'info', 2000);
+    showToast(`Outbidding competitor by 1¢: $${newPrice.toFixed(2)}...`, 'info', 2000);
     saveItemPrice(userOfferId, newPrice);
 }
 
@@ -650,10 +650,10 @@ function openCompetitorsModal(offerId) {
     const bodyEl = document.getElementById('modalBody');
 
     if (titleEl) titleEl.textContent = item.title;
-    if (subEl) subEl.textContent = `Категория флоата: ${item.category_label} | Позиция: ${item.rank} из ${item.total_in_category}`;
+    if (subEl) subEl.textContent = `Float category: ${item.category_label} | Rank: ${item.rank} of ${item.total_in_category}`;
     if (linkEl) {
         linkEl.href = getDMarketSearchUrl(item);
-        linkEl.title = `Открыть страницу скина в категории [${item.category_label}] на DMarket`;
+        linkEl.title = `Open skin page in category [${item.category_label}] on DMarket`;
     }
 
     if (bodyEl) {
@@ -667,7 +667,7 @@ function renderCompetitorsTable(item, container) {
     const competitors = item.competitors || [];
 
     if (competitors.length === 0) {
-        container.innerHTML = `<div style="padding: 30px; text-align: center; color: var(--text-muted); font-size: 13px;">Нет активных предложений конкурентов в этой категории флоата</div>`;
+        container.innerHTML = `<div style="padding: 30px; text-align: center; color: var(--text-muted); font-size: 13px;">No active competitor offers in this float category</div>`;
         return;
     }
 
@@ -680,30 +680,30 @@ function renderCompetitorsTable(item, container) {
     const hasAnySpecial = competitors.some(c => c.phase || c.fade_pct || c.tier) || item.phase || item.phase_display;
 
     let showSpecialCol = false;
-    let specialColTitle = 'ФАЗА';
+    let specialColTitle = 'PHASE';
 
     if (isDoppler) {
         showSpecialCol = true;
-        specialColTitle = 'ФАЗА';
+        specialColTitle = 'PHASE';
     } else if (isMarbleFade) {
         showSpecialCol = true;
-        specialColTitle = 'ТИР';
+        specialColTitle = 'TIER';
     } else if (isFade) {
         showSpecialCol = true;
-        specialColTitle = '% ФЕЙДА';
+        specialColTitle = 'FADE %';
     } else if (isCaseHardened) {
         showSpecialCol = true;
-        specialColTitle = 'ТИР';
+        specialColTitle = 'TIER';
     } else if (hasAnySpecial) {
         showSpecialCol = true;
-        specialColTitle = 'ФАЗА / ТИР';
+        specialColTitle = 'PHASE / TIER';
     }
 
     const rowsHtml = competitors.map((c, idx) => {
         const isUser = c.is_user_offer || c.offer_id === item.offer_id;
         const rowClass = isUser ? 'user-row' : '';
         const rankNum = idx + 1;
-        const rankBadge = isUser ? `<span class="tag-user-badge">Ваш лот</span>` : `<span style="font-family: var(--font-mono); font-weight: 700; color: var(--text-secondary);">${rankNum}</span>`;
+        const rankBadge = isUser ? `<span class="tag-user-badge">Your offer</span>` : `<span style="font-family: var(--font-mono); font-weight: 700; color: var(--text-secondary);">${rankNum}</span>`;
         const floatStr = (c.float !== null && c.float !== undefined) ? c.float.toFixed(4) : '—';
         const seedStr = c.paint_seed || '—';
 
@@ -728,7 +728,7 @@ function renderCompetitorsTable(item, container) {
                 <div class="user-price-edit-group">
                     <span class="price-input-prefix">$</span>
                     <input type="number" step="0.01" min="0.01" class="input-user-price" id="modal-price-${c.offer_id}" value="${c.price_usd.toFixed(2)}" data-offer-id="${c.offer_id}">
-                    <button class="btn-save-price" data-action="save-modal-price" data-offer-id="${c.offer_id}" title="Сохранить новую цену лота на DMarket">
+                    <button class="btn-save-price" data-action="save-modal-price" data-offer-id="${c.offer_id}" title="Save new offer price on DMarket">
                         <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
                         <span>OK</span>
                     </button>
@@ -738,10 +738,10 @@ function renderCompetitorsTable(item, container) {
                 <div class="user-action-group">
                     <span style="color: var(--green-text); font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
                         <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> 
-                        Выставлен вами
+                        Listed by you
                     </span>
-                    <button class="btn-delist-lot" data-action="delist-lot" data-offer-id="${item.offer_id}" title="Снять этот лот с продажи на DMarket">
-                        Снять
+                    <button class="btn-delist-lot" data-action="delist-lot" data-offer-id="${item.offer_id}" title="Delist this offer from DMarket">
+                        Delist
                     </button>
                 </div>
             `;
@@ -749,12 +749,12 @@ function renderCompetitorsTable(item, container) {
             priceHtml = `<span class="font-mono text-price-bold" style="color: var(--green-text); font-size: 13px;">$${c.price_usd.toFixed(2)}</span>`;
             actionHtml = `
                 <div class="comp-action-group">
-                    <button class="btn-outbid-lot" data-action="outbid" data-comp-price="${c.price_usd}" data-user-offer-id="${item.offer_id}" title="Снизить цену вашего лота на 1¢ ниже этого предложения (до $${Math.max(0.01, c.price_usd - 0.01).toFixed(2)})">
+                    <button class="btn-outbid-lot" data-action="outbid" data-comp-price="${c.price_usd}" data-user-offer-id="${item.offer_id}" title="Lower your offer price by 1¢ below this offer (to $${Math.max(0.01, c.price_usd - 0.01).toFixed(2)})">
                         <span>Outbid</span>
                     </button>
-                    <button class="btn-buy-lot" data-action="prompt-buy" data-offer-id="${c.offer_id}" data-title="${encodeURIComponent(item.title)}" data-price="${c.price_usd}" data-float="${floatStr}" data-seed="${seedStr}" title="Выкупить этот лот конкурента с DMarket">
+                    <button class="btn-buy-lot" data-action="prompt-buy" data-offer-id="${c.offer_id}" data-title="${encodeURIComponent(item.title)}" data-price="${c.price_usd}" data-float="${floatStr}" data-seed="${seedStr}" title="Buy this competitor offer from DMarket">
                         <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-                        <span>Купить $${c.price_usd.toFixed(2)}</span>
+                        <span>Buy $${c.price_usd.toFixed(2)}</span>
                     </button>
                 </div>
             `;
@@ -776,12 +776,12 @@ function renderCompetitorsTable(item, container) {
         <table class="comp-table">
             <thead>
                 <tr>
-                    <th style="width: 65px;">РАНГ</th>
-                    <th style="width: 145px;">ЦЕНА</th>
+                    <th style="width: 65px;">RANK</th>
+                    <th style="width: 145px;">PRICE</th>
                     <th style="width: 85px;">FLOAT</th>
                     <th style="width: 60px;">SEED</th>
                     ${showSpecialCol ? `<th style="width: 85px;">${specialColTitle}</th>` : ''}
-                    <th style="min-width: 200px;">ДЕЙСТВИЕ</th>
+                    <th style="min-width: 200px;">ACTION</th>
                 </tr>
             </thead>
             <tbody>
@@ -792,22 +792,22 @@ function renderCompetitorsTable(item, container) {
 }
 
 async function cancelOfferLot(offerId) {
-    if (!confirm('Вы действительно хотите снять этот лот с продажи на DMarket?')) {
+    if (!confirm('Are you sure you want to delist this offer from DMarket?')) {
         return;
     }
-    showToast('Снятие лота с продажи...', 'info', 2000);
+    showToast('Delisting offer...', 'info', 2000);
     try {
         const res = await DMarketAPI.deleteUserOffers([offerId]);
         if (res.success) {
-            showToast('Лот успешно снят с продажи!', 'success', 3500);
+            showToast('Offer successfully delisted!', 'success', 3500);
             allItems = allItems.filter(x => x.offer_id !== offerId);
             applyFiltersAndRender();
             closeModal();
         } else {
-            showToast(`Ошибка: ${res.error || 'Не удалось снять лот'}`, 'error', 4000);
+            showToast(`Error: ${res.error || 'Failed to delist offer'}`, 'error', 4000);
         }
     } catch (e) {
-        showToast(`Ошибка: ${e.message}`, 'error', 4000);
+        showToast(`Error: ${e.message}`, 'error', 4000);
     }
 }
 
@@ -818,7 +818,7 @@ async function refreshCurrentModalItem() {
 
     const refreshText = document.getElementById('modalRefreshText');
     const refreshIcon = document.getElementById('modalRefreshIcon');
-    if (refreshText) refreshText.textContent = 'Обновление...';
+    if (refreshText) refreshText.textContent = 'Refreshing...';
     if (refreshIcon) refreshIcon.style.animation = 'spin 0.6s linear infinite';
 
     try {
@@ -827,16 +827,16 @@ async function refreshCurrentModalItem() {
         if (updated) {
             Object.assign(item, updated);
             const subEl = document.getElementById('modalSubtitle');
-            if (subEl) subEl.textContent = `Категория флоата: ${item.category_label} | Позиция: ${item.rank_display}`;
+            if (subEl) subEl.textContent = `Float category: ${item.category_label} | Rank: ${item.rank_display}`;
             const bodyEl = document.getElementById('modalBody');
             if (bodyEl) renderCompetitorsTable(item, bodyEl);
             applyFiltersAndRender();
-            showToast('Предложения обновлены в реальном времени!', 'success', 2500);
+            showToast('Offers refreshed in real-time!', 'success', 2500);
         }
     } catch (e) {
-        showToast('Ошибка обновления: ' + e.message, 'error', 3000);
+        showToast('Update error: ' + e.message, 'error', 3000);
     } finally {
-        if (refreshText) refreshText.textContent = 'Обновить';
+        if (refreshText) refreshText.textContent = 'Refresh';
         if (refreshIcon) refreshIcon.style.animation = '';
     }
 }
@@ -882,23 +882,23 @@ async function executeBuyOffer() {
     const execBtn = document.getElementById('buyExecuteBtn');
     const execBtnText = document.getElementById('buyExecuteBtnText');
     if (execBtn) execBtn.disabled = true;
-    if (execBtnText) execBtnText.textContent = 'Покупка...';
+    if (execBtnText) execBtnText.textContent = 'Buying...';
 
     try {
         const res = await DMarketAPI.buyMarketOffer(offerId, priceUsd);
         if (res.success) {
-            showToast(`Успешная покупка за $${priceUsd.toFixed(2)}!`, 'success', 4000);
+            showToast(`Successful purchase for $${priceUsd.toFixed(2)}!`, 'success', 4000);
             closeBuyConfirmModal();
             closeModal();
             startScan();
         } else {
-            showToast(`Ошибка покупки: ${res.error || 'DMarket отклонил покупку'}`, 'error', 4500);
+            showToast(`Purchase error: ${res.error || 'DMarket rejected the purchase'}`, 'error', 4500);
         }
     } catch (e) {
-        showToast('Исключение при покупке: ' + e.message, 'error', 4500);
+        showToast('Purchase exception: ' + e.message, 'error', 4500);
     } finally {
         if (execBtn) execBtn.disabled = false;
-        if (execBtnText) execBtnText.textContent = 'Подтвердить и купить';
+        if (execBtnText) execBtnText.textContent = 'Confirm and buy';
     }
 }
 

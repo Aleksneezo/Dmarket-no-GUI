@@ -10,7 +10,7 @@ class DMarketAPI {
         DMarketLogger.logDebug(msg, data);
     }
 
-    // Получение профиля пользователя
+    // Get user profile
     static async getUserProfile() {
         if (this.cachedProfile) return this.cachedProfile;
 
@@ -18,7 +18,7 @@ class DMarketAPI {
             const res = await fetchWithAuth(`${this.BASE_URL}/account/v1/user`);
             if (res.ok && res.data && (res.data.username || res.data.email || res.data.id || res.data.userId)) {
                 this.cachedProfile = res.data;
-                this.logDebug("Профиль успешно получен:", res.data.username || res.data.email);
+                this.logDebug("Profile successfully fetched:", res.data.username || res.data.email);
                 return res.data;
             }
             const balRes = await fetchWithAuth(`${this.BASE_URL}/account/v1/balance`);
@@ -32,12 +32,12 @@ class DMarketAPI {
         }
     }
 
-    // Получение выставленных лотов пользователя
+    // Get user active offers
     static async getUserOffers(gameId = "a8db", pageSize = 100) {
         const auth = await getDMarketAuth();
-        this.logDebug(`Запрос активных лотов пользователя (JWT: ${auth.jwt ? 'найден' : 'ОТСУТСТВУЕТ'})...`);
+        this.logDebug(`Fetching active user offers (JWT: )...`);
 
-        // Эндпоинты для проверки
+        // Endpoints to check
         const endpoints = [
             {
                 name: "marketplace-api/v2/user/offers",
@@ -63,16 +63,16 @@ class DMarketAPI {
                 if (res.ok && res.data) {
                     const list = res.data.items || res.data.offers || res.data.objects || res.data.Items || res.data.Offers || (Array.isArray(res.data) ? res.data : []);
                     if (Array.isArray(list) && list.length > 0) {
-                        this.logDebug(`Успешно получено ${list.length} предметов через ${ep.name}!`);
+                        this.logDebug(`Successfully received  items via !`);
                         return list;
                     }
                 }
             } catch (e) {
-                this.logDebug(`Ошибка запроса ${ep.name}: ${e.message}`);
+                this.logDebug(`Request error : `);
             }
         }
 
-        // Фоллбек: сохраненный кэш перехватчика (только валидные скины с ID)
+        // Fallback: saved interceptor cache (only valid skins with ID)
         try {
             let stored = await chrome.storage.local.get(["dmInterceptedItems"]);
             if (stored.dmInterceptedItems && Array.isArray(stored.dmInterceptedItems)) {
@@ -82,26 +82,26 @@ class DMarketAPI {
                     return (title.includes('|') || title.includes('★')) && hasId;
                 });
                 if (validItems.length > 0) {
-                    this.logDebug(`Использован сохраненный кэш: ${validItems.length} предметов`);
+                    this.logDebug(`Used saved cache:  items`);
                     return validItems;
                 }
             }
         } catch (e) {}
 
         if (!auth.jwt) {
-            this.logDebug("ВНИМАНИЕ: JWT токен не обнаружен. Пожалуйста, откройте вкладку dmarket.com и обновите ее (F5).");
+            this.logDebug("WARNING: JWT token not found. Please open the dmarket.com tab and refresh it (F5).");
         } else {
-            this.logDebug("Все эндпоинты вернули 0 лотов. Убедитесь, что у вас есть активные лоты на продаже (On Sale) на DMarket.");
+            this.logDebug("All endpoints returned 0 offers. Make sure you have active offers (On Sale) on DMarket.");
         }
 
         return [];
     }
 
-    // Закрытые сделки (история покупок для P&L) через fetchWithAuth
+    // Closed trades (purchase history for P&L) via fetchWithAuth
     static async getUserClosedTargets(maxPages = 5, limit = 100) {
         const trades = [];
         
-        // Основной метод: получение истории через общий эндпоинт истории (включая прямые покупки и таргеты)
+        // Main method: get history via general history endpoint (including direct buys and targets)
         try {
             let offset = 0;
             const newLimit = 500;
@@ -110,9 +110,9 @@ class DMarketAPI {
                 const res = await fetchWithAuth(`${this.BASE_URL}${path}`);
                 if (res.ok && res.data && res.data.objects) {
                     for (const obj of res.data.objects) {
-                        if (obj && obj.details && obj.details.itemId) {
+                        if (obj && (obj.details?.itemId || obj.details?.assetId || obj.assetId || obj.itemId)) {
                             trades.push({
-                                assetId: obj.details.itemId,
+                                assetId: obj.details?.itemId || obj.details?.assetId || obj.assetId || obj.itemId,
                                 Title: obj.subject || "",
                                 price_usd: (obj.changes && obj.changes[0] && obj.changes[0].money) ? parseFloat(obj.changes[0].money.amount) : 0 
                             });
@@ -125,10 +125,10 @@ class DMarketAPI {
                 }
             }
         } catch (e) {
-            this.logDebug("Ошибка при получении новой истории покупок: " + e.message);
+            this.logDebug("Error fetching new purchase history: " + e.message);
         }
 
-        // Фоллбек: старый эндпоинт (только закрытые таргеты), если новый ничего не вернул
+        // Fallback: old endpoint (only closed targets), if new returned nothing
         if (trades.length === 0) {
             let cursor = "";
             for (let i = 0; i < maxPages; i++) {
@@ -150,11 +150,11 @@ class DMarketAPI {
             }
         }
         
-        this.logDebug(`Успешно получено ${trades.length} записей из истории покупок.`);
+        this.logDebug(`Successfully received  records from purchase history.`);
         return trades;
     }
 
-    // Поиск предложений конкурентов на маркете (как было в v1, плюс Orderbook API)
+    // Search competitor offers on market (like v1, plus Orderbook API)
     static async getMarketOffers(title, exterior = null, phase = null, treeFiltersExtra = null, limit = 100, floatPartValue = null, exactFullTitle = null) {
         const cleanTitle = title.replace(/^[★*]\s*/, '').trim();
 
@@ -188,7 +188,7 @@ class DMarketAPI {
         if (phase) filters.push(`phase[]=${phase}`);
         if (treeFiltersExtra) filters.push(treeFiltersExtra);
 
-        // 1. Основной эндпоинт v2 как было в Python (наиболее надежный для treeFilters)
+        // 1. Main endpoint v2 like in Python (most reliable for treeFilters)
         const params1 = new URLSearchParams({
             gameId: "a8db",
             title: cleanTitle,
@@ -212,7 +212,7 @@ class DMarketAPI {
             }
         } catch (e) {}
 
-        // 2. Фоллбек на новый эндпоинт exchange/v1 (иногда работает лучше без treeFilters)
+        // 2. Fallback to new endpoint exchange/v1 (sometimes works better without treeFilters)
         const params2 = new URLSearchParams({
             gameId: "a8db",
             title: cleanTitle,
@@ -237,7 +237,7 @@ class DMarketAPI {
             }
         } catch (e) {}
 
-        // 3. Поиск вообще без фильтров exterior/phase (самый широкий фоллбек)
+        // 3. Search without exterior/phase filters entirely (broadest fallback)
         const params3 = new URLSearchParams({
             gameId: "a8db",
             title: cleanTitle,
@@ -260,15 +260,15 @@ class DMarketAPI {
         }
         return {};
     }
-    // Изменение цены лота (Репрайс) через нативный PATCH /exchange/v1/offers
+    // Change offer price (Reprice) via native PATCH /exchange/v1/offers
     static async editOfferPrice(offerId, priceUsd, altIds = []) {
         const priceCents = Math.round(priceUsd * 100);
         const priceCentsStr = String(priceCents);
         const idsToTry = Array.from(new Set([offerId, ...altIds].filter(Boolean)));
 
-        this.logDebug(`[editOfferPrice] Запрос обновления цены до $${priceUsd.toFixed(2)} (${priceCentsStr}¢, offerId=${offerId})`);
+        this.logDebug(`[editOfferPrice] Price update request to {priceUsd.toFixed(2)} (¢, offerId=)`);
 
-        // 1. Основной нативный веб-метод DMarket: PATCH /exchange/v1/offers
+        // 1. Main native web method DMarket: PATCH /exchange/v1/offers
         for (const targetId of idsToTry) {
             const urlExchange = `${this.BASE_URL}/exchange/v1/offers`;
             const payload = {
@@ -296,16 +296,16 @@ class DMarketAPI {
 
                 if (res.ok || res.status === 200 || res.status === 201 || res.status === 204) {
                     if (!res.data || !res.data.error || res.data.success) {
-                        this.logDebug(`[editOfferPrice] Цена успешно обновлена через PATCH /exchange/v1/offers!`);
+                        this.logDebug(`[editOfferPrice] Price successfully updated via PATCH /exchange/v1/offers!`);
                         return { success: true, data: res.data || {} };
                     }
                 }
             } catch (e) {
-                this.logDebug(`[editOfferPrice] PATCH ошибка: ${e.message}`);
+                this.logDebug(`[editOfferPrice] PATCH error: `);
             }
         }
 
-        // 2. Фоллбек: v2 batchUpdate
+        // 2. Fallback: v2 batchUpdate
         for (const tid of idsToTry) {
             const urlV2 = `${this.BASE_URL}/marketplace-api/v2/offers:batchUpdate`;
             try {
@@ -324,7 +324,7 @@ class DMarketAPI {
                         const firstFail = failed[0];
                         const msg = firstFail.message || firstFail.code || "";
                         if (msg.includes("NewOfferHasSamePriceAndFees") || msg === "NewOfferHasSamePriceAndFees") {
-                            return { success: true, data: resV2.data, message: "Цена уже установлена на этот уровень" };
+                            return { success: true, data: resV2.data, message: "Price is already set to this level" };
                         }
                     } else {
                         return { success: true, data: resV2.data };
@@ -333,7 +333,7 @@ class DMarketAPI {
             } catch (e) {}
         }
 
-        // 3. Фоллбек: v1 user-offers/edit
+        // 3. Fallback: v1 user-offers/edit
         for (const tid of idsToTry) {
             const urlV1 = `${this.BASE_URL}/marketplace-api/v1/user-offers/edit`;
             try {
@@ -352,10 +352,10 @@ class DMarketAPI {
             } catch (e) {}
         }
 
-        return { success: false, error: "Не удалось обновить цену лота. Подробности в «Журнал API»." };
+        return { success: false, error: "Failed to update offer price. Details in 'API Log'." };
     }
 
-    // Покупка лота конкурента через fetchWithAuth
+    // Buy competitor offer via fetchWithAuth
     static async buyMarketOffer(offerId, priceUsd) {
         const url = `${this.BASE_URL}/exchange/v1/offers-buy`;
         const priceCents = Math.round(priceUsd * 100);
@@ -393,9 +393,9 @@ class DMarketAPI {
         }
     }
 
-    // Снятие лотов с продажи через fetchWithAuth
+    // Delist offers via fetchWithAuth
     static async deleteUserOffers(offerIds) {
-        if (!offerIds || offerIds.length === 0) return { success: false, error: "Не указаны лоты для снятия" };
+        if (!offerIds || offerIds.length === 0) return { success: false, error: "No offers specified for delisting" };
         const urlV2 = `${this.BASE_URL}/marketplace-api/v2/offers`;
         try {
             const res = await fetchWithAuth(urlV2, {
@@ -405,10 +405,10 @@ class DMarketAPI {
             });
 
             if (res.ok || res.status === 204) {
-                return { success: true, message: "Лот успешно снят с продажи" };
+                return { success: true, message: "Offer successfully delisted" };
             }
 
-            // Фоллбек на v1
+            // Fallback to v1
             const urlV1 = `${this.BASE_URL}/marketplace-api/v1/user-offers/delete`;
             const resV1 = await fetchWithAuth(urlV1, {
                 method: "POST",
@@ -417,7 +417,7 @@ class DMarketAPI {
             });
 
             if (resV1.ok || resV1.status === 204) {
-                return { success: true, message: "Лот успешно снят с продажи" };
+                return { success: true, message: "Offer successfully delisted" };
             }
 
             return { success: false, error: res.text || `HTTP ${res.status}` };

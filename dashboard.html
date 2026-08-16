@@ -24,17 +24,17 @@
 
             <div class="navbar-actions">
                 <!-- Browser Session Status Badge -->
-                <div class="api-badge" id="sessionStatusBadge" title="Статус сессии dmarket.com в вашем браузере">
+                <div class="api-badge" id="sessionStatusBadge" title="Browser dmarket.com session status">
                     <span class="dot active" id="sessionDot"></span>
-                    <span id="sessionStatusText">Проверка dmarket.com...</span>
+                    <span id="sessionStatusText">Checking dmarket.com...</span>
                 </div>
 
-                <button id="debugBtn" class="btn-flat btn-secondary" title="Показать журнал сетевых запросов к DMarket">
+                <button id="debugBtn" class="btn-flat btn-secondary" title="Show DMarket API network log">
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                    <span>Журнал API</span>
+                    <span>API Log</span>
                 </button>
 
-                <a href="https://dmarket.com" target="_blank" rel="noopener noreferrer" class="btn-flat btn-secondary" title="Открыть DMarket">
+                <a href="https://dmarket.com" target="_blank" rel="noopener noreferrer" class="btn-flat btn-secondary" title="Open DMarket">
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                     <span>DMarket.com</span>
                 </a>
@@ -42,7 +42,7 @@
                 <!-- Scan Button -->
                 <button id="scanBtn" class="btn-flat btn-accent">
                     <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
-                    <span id="scanBtnText">Сканировать лоты</span>
+                    <span id="scanBtnText">Scan Offers</span>
                 </button>
             </div>
         </header>
@@ -50,27 +50,27 @@
         <!-- Stats Bar (Flat Metrics) -->
         <section class="metrics-bar">
             <div class="metric-card">
-                <span class="metric-label">Всего лотов</span>
+                <span class="metric-label">Total Items</span>
                 <span class="metric-value" id="statTotalItems">0</span>
             </div>
             <div class="metric-card border-green">
-                <span class="metric-label">#1 Позиция (Мин. цена)</span>
+                <span class="metric-label">#1 Rank (Min Price)</span>
                 <span class="metric-value text-green" id="statRank1Items">0</span>
             </div>
             <div class="metric-card border-amber">
-                <span class="metric-label">#2 - #3 Позиция</span>
+                <span class="metric-label">#2 - #3 Rank</span>
                 <span class="metric-value text-amber" id="statTop3Items">0</span>
             </div>
             <div class="metric-card border-slate">
-                <span class="metric-label">#4+ Позиция</span>
+                <span class="metric-label">#4+ Rank</span>
                 <span class="metric-value text-slate" id="statRank4Items">0</span>
             </div>
             <div class="metric-card metric-portfolio">
-                <span class="metric-label">Сумма лотов</span>
+                <span class="metric-label">Portfolio Value</span>
                 <span class="metric-value font-mono" id="statPortfolioVal">$0.00</span>
             </div>
             <div class="metric-card metric-profit">
-                <span class="metric-label">Ожидаемый P&L</span>
+                <span class="metric-label">Expected P&L</span>
                 <span class="metric-value font-mono" id="statProfitVal">$0.00</span>
             </div>
         </section>
@@ -80,9 +80,9 @@
             <div class="progress-info-row">
                 <div class="progress-msg">
                     <div class="spinner-flat"></div>
-                    <span id="progressText">Сканирование лотов через DMarket API...</span>
+                    <span id="progressText">Scanning offers via DMarket API...</span>
                 </div>
-                <button id="stopBtn" class="btn-flat btn-danger-sm">Остановить</button>
+                <button id="stopBtn" class="btn-flat btn-danger-sm">Stop</button>
             </div>
             <div class="progress-track">
                 <div id="progressBar" class="progress-fill" style="width: 0%;"></div>
@@ -93,25 +93,25 @@
         <section class="controls-bar">
             <div class="search-input-wrap">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                <input type="text" id="searchInput" placeholder="Поиск по скину..." autocomplete="off">
+                <input type="text" id="searchInput" placeholder="Search skin..." autocomplete="off">
             </div>
 
             <div class="filter-group">
-                <button class="filter-tab active" data-filter="all">Все <span class="tab-count" id="countAll">0</span></button>
+                <button class="filter-tab active" data-filter="all">All <span class="tab-count" id="countAll">0</span></button>
                 <button class="filter-tab" data-filter="rank1">#1 <span class="tab-count text-green" id="countRank1">0</span></button>
                 <button class="filter-tab" data-filter="top3">#2 - #3 <span class="tab-count text-amber" id="countTop3">0</span></button>
                 <button class="filter-tab" data-filter="rank4">#4+ <span class="tab-count text-slate" id="countRank4">0</span></button>
             </div>
 
             <div class="sort-wrap">
-                <label for="sortSelect" class="sort-label">Сортировка:</label>
+                <label for="sortSelect" class="sort-label">Sort by:</label>
                 <select id="sortSelect" class="flat-select">
-                    <option value="rank_asc">Позиция: Сначала лучшие (#1, #2...)</option>
-                    <option value="rank_desc">Позиция: Сначала дальние (#4+, #3...)</option>
-                    <option value="price_desc">Цена: От дорогих к дешевым</option>
-                    <option value="price_asc">Цена: От дешевых к дорогим</option>
-                    <option value="profit_desc">Профит: По убыванию</option>
-                    <option value="float_asc">Float: От меньшего к большему</option>
+                    <option value="rank_asc">Rank: Best first (#1, #2...)</option>
+                    <option value="rank_desc">Rank: Worst first (#4+, #3...)</option>
+                    <option value="price_desc">Price: High to Low</option>
+                    <option value="price_asc">Price: Low to High</option>
+                    <option value="profit_desc">P&L: High to Low</option>
+                    <option value="float_asc">Float: Low to High</option>
                 </select>
             </div>
         </section>
@@ -121,22 +121,22 @@
             <div class="empty-icon">
                 <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="m12 6 4 6h-8l4-6z"/></svg>
             </div>
-            <h3>Нет данных для отображения</h3>
-            <p>Нажмите <strong>«Сканировать лоты»</strong>, чтобы загрузить ваши активные предметы на DMarket, цены их покупки и определить их позиции в диапазонах флоата.</p>
+            <h3>No data to display</h3>
+            <p>Click <strong>«Scan Offers»</strong> to fetch your active items on DMarket, their purchase prices, and determine their ranks in float categories.</p>
             <div class="empty-actions">
-                <button id="emptyScanBtn" class="btn-flat btn-accent">Запустить сканирование</button>
+                <button id="emptyScanBtn" class="btn-flat btn-accent">Start Scan</button>
             </div>
         </div>
 
         <!-- Vertical Items List -->
         <main id="itemsListSection" class="items-list-container hidden">
             <div class="list-header-row">
-                <div class="col-item">ПРЕДМЕТ</div>
+                <div class="col-item">ITEM</div>
                 <div class="col-float">FLOAT</div>
-                <div class="col-rank">ПОЗИЦИЯ</div>
-                <div class="col-buy">ЦЕНА ПОКУПКИ</div>
-                <div class="col-price">ПРОДАЖА / P&L (–2%)</div>
-                <div class="col-actions">ДЕЙСТВИЯ</div>
+                <div class="col-rank">RANK</div>
+                <div class="col-buy">BUY PRICE</div>
+                <div class="col-price">SELL / P&L (–2%)</div>
+                <div class="col-actions">ACTIONS</div>
             </div>
 
             <div id="itemsContainer" class="items-vertical-list">
@@ -151,8 +151,8 @@
             <div class="modal-head">
                 <div class="modal-title-box">
                     <div class="modal-title-row">
-                        <h3 id="modalTitle">Конкуренты в категории флота</h3>
-                        <a id="modalDMarketLink" href="#" target="_blank" rel="noopener noreferrer" class="btn-dmarket-header" title="Открыть листинги этой категории на DMarket">
+                        <h3 id="modalTitle">Competitors in Float Category</h3>
+                        <a id="modalDMarketLink" href="#" target="_blank" rel="noopener noreferrer" class="btn-dmarket-header" title="Open these listings on DMarket">
                             <span>DMarket</span>
                             <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                         </a>
@@ -160,13 +160,13 @@
                     <span id="modalSubtitle" class="modal-sub"></span>
                 </div>
                 <div class="modal-head-actions">
-                    <button id="modalRefreshBtn" class="btn-flat btn-modal-refresh" title="Обновить предложения этого скина с DMarket в реальном времени">
+                    <button id="modalRefreshBtn" class="btn-flat btn-modal-refresh" title="Refresh market offers in real-time">
                         <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" id="modalRefreshIcon">
                             <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
                         </svg>
-                        <span id="modalRefreshText">Обновить</span>
+                        <span id="modalRefreshText">Refresh</span>
                     </button>
-                    <button id="modalCloseBtn" class="btn-close" title="Закрыть">&times;</button>
+                    <button id="modalCloseBtn" class="btn-close" title="Close">&times;</button>
                 </div>
             </div>
             <div class="modal-body" id="modalBody">
@@ -180,17 +180,17 @@
         <div class="modal-window modal-window-sm">
             <div class="modal-head">
                 <div class="modal-title-box">
-                    <h3 class="text-amber">Подтверждение покупки</h3>
-                    <span class="modal-sub">Списание средств с баланса DMarket через браузерную сессию</span>
+                    <h3 class="text-amber">Confirm Purchase</h3>
+                    <span class="modal-sub">Deducting balance from your DMarket account</span>
                 </div>
                 <button id="buyConfirmCloseBtn" class="btn-close">&times;</button>
             </div>
             <div class="modal-body">
                 <div class="buy-confirm-box">
-                    <p class="buy-confirm-title" id="buyConfirmItemTitle">Предмет</p>
+                    <p class="buy-confirm-title" id="buyConfirmItemTitle">Item</p>
                     <div class="buy-confirm-details">
                         <div class="buy-detail-row">
-                            <span class="buy-detail-lbl">Цена списания:</span>
+                            <span class="buy-detail-lbl">Price:</span>
                             <span class="buy-detail-val text-green font-mono" id="buyConfirmPrice">$0.00</span>
                         </div>
                         <div class="buy-detail-row">
@@ -203,20 +203,20 @@
                         </div>
                     </div>
                     <div class="buy-warning-note">
-                        Средства будут моментально списаны с вашего счета DMarket для выкупа этого лота.
+                        Funds will be immediately deducted from your DMarket balance to purchase this item.
                     </div>
                     <div class="buy-double-confirm-wrap">
                         <label class="buy-confirm-check-label" for="buyConfirmCheckbox">
                             <input type="checkbox" id="buyConfirmCheckbox">
-                            <span>Подтверждаю списание реального баланса DMarket</span>
+                            <span>I confirm deduction of real DMarket balance</span>
                         </label>
                     </div>
                 </div>
                 <div class="buy-confirm-actions">
-                    <button id="buyCancelBtn" class="btn-flat btn-secondary">Отмена</button>
+                    <button id="buyCancelBtn" class="btn-flat btn-secondary">Cancel</button>
                     <button id="buyExecuteBtn" class="btn-flat btn-buy-execute" disabled>
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-                        <span id="buyExecuteBtnText">Купить лот</span>
+                        <span id="buyExecuteBtnText">Buy Item</span>
                     </button>
                 </div>
             </div>
@@ -228,14 +228,14 @@
         <div class="modal-window modal-window-md">
             <div class="modal-head">
                 <div class="modal-title-box">
-                    <h3>Журнал сетевых запросов DMarket API</h3>
-                    <span class="modal-sub">Диагностика ответов сервера в реальном времени</span>
+                    <h3>DMarket API Network Log</h3>
+                    <span class="modal-sub">Real-time server response diagnostics</span>
                 </div>
                 <button id="debugCloseBtn" class="btn-close">&times;</button>
             </div>
             <div class="modal-body">
                 <div id="debugLogsContainer" style="background:#090d14; border:1px solid #242e42; border-radius:6px; padding:12px; font-family:'JetBrains Mono', monospace; font-size:11px; max-height:400px; overflow-y:auto; white-space:pre-wrap; color:#9ca3af;">
-                    Логи пока пусты. Нажмите «Сканировать лоты».
+                    Logs are empty. Click «Scan Offers».
                 </div>
             </div>
         </div>
