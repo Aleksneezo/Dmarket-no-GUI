@@ -1,6 +1,6 @@
 # 🧩 DMarket No GUI - Float & Profit Tracker, inventory manager — Standalone Browser Extension
 
-Fully autonomous browser extension (Chrome / Brave / Edge / Opera) by Neezo and Cyberbebebe **(https://github.com/cyberbebebe)**.
+Fully autonomous browser extension (Chrome / Brave / Edge / Opera) by Neezo and [Cyberbebebe](https://github.com/cyberbebebe).
 
 > **IMPORTANT:** This extension **DOES NOT REQUIRE Python, Flask, or running any scripts**. Everything works 100% locally inside your browser!
 
